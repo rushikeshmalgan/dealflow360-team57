@@ -796,6 +796,10 @@ model NotificationOutbox {
   status         OutboxStatus @default(PENDING)
   attempts       Int          @default(0)
   nextAttemptAt  DateTime?    @map("next_attempt_at") @db.Timestamptz(6)
+  /// Set by the BullMQ dispatcher the moment queue insertion succeeds (TAD SS24A); null while PENDING.
+  dispatchedAt   DateTime?    @map("dispatched_at") @db.Timestamptz(6)
+  /// Sanitized failure reason from the last dispatch or worker attempt; null until something fails.
+  lastError      String?      @map("last_error")
   idempotencyKey String       @unique @map("idempotency_key")
   jobId          String?      @map("job_id")
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
