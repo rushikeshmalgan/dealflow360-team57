@@ -7,7 +7,7 @@ import {
   resolveActorByInternalUserId,
   resolveActorForClerkUser,
 } from "@/lib/auth/clerk-mapping";
-import { isValidRole } from "@/lib/auth/roles";
+import { isValidRole, type AppRole } from "@/lib/auth/roles";
 import type { AuthenticatedUser } from "@/lib/auth/types";
 import type { Actor } from "@/modules/shared/domain/actor";
 
@@ -46,13 +46,15 @@ async function resolveViaClerkToken(token: string): Promise<Actor | null> {
     if (!clerkUserId) return null;
 
     const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    let role = clerkUser.publicMetadata?.role;
-    if (!isValidRole(role)) {
-      if (process.env.NODE_ENV === "development") {
-        role = "ADMIN";
-      } else {
-        return null;
-      }
+    const rawRole = clerkUser.publicMetadata?.role;
+    let role: AppRole;
+
+    if (isValidRole(rawRole)) {
+      role = rawRole;
+    } else if (process.env.NODE_ENV === "development") {
+      role = "ADMIN";
+    } else {
+      return null;
     }
 
     const authenticatedUser: AuthenticatedUser = buildAuthenticatedUser(clerkUserId, role, clerkUser);

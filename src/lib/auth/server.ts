@@ -28,14 +28,15 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     return null;
   }
 
-  let role = user.publicMetadata?.role;
+  const rawRole = user.publicMetadata?.role;
+  let role: AppRole;
 
-  if (!isValidRole(role)) {
-    if (process.env.NODE_ENV === "development") {
-      role = "ADMIN";
-    } else {
-      return null;
-    }
+  if (isValidRole(rawRole)) {
+    role = rawRole;
+  } else if (process.env.NODE_ENV === "development") {
+    role = "ADMIN";
+  } else {
+    return null;
   }
 
   return buildAuthenticatedUser(userId, role, user);
