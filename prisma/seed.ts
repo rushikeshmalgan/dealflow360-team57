@@ -11,7 +11,17 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Intentionally empty until T13.2 (Seed data & demo fixtures).
+  // Example configuration only. Application code always reads tiers from the
+  // database; none of these names have special behavior.
+  await Promise.all(
+    ["Bronze", "Silver", "Gold"].map((name) =>
+      prisma.customerTier.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      }),
+    ),
+  );
 }
 
 main()

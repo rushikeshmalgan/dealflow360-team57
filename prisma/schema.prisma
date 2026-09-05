@@ -210,6 +210,7 @@ model Product {
   categoryId     String               @map("category_id") @db.Uuid
   sku            String               @unique
   name           String
+  price          Decimal              @db.Decimal(14, 2)
   unit           String
   taxPct         Decimal              @map("tax_pct") @db.Decimal(7, 4)
   description    String?
