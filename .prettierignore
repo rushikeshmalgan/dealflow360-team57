@@ -5,3 +5,7 @@ build
 storage
 prisma/migrations
 package-lock.json
+
+# product/reference documentation is authored and formatted outside this codebase
+docs
+README.md
