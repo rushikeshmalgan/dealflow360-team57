@@ -131,6 +131,34 @@ enum OutboxStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Deal Health (TAD SS34)
+// ---------------------------------------------------------------------------
+
+enum DealHealthAlertType {
+  STALLED_QUOTATION
+  DISCOUNT_ANOMALY
+  DELIVERY_SLIPPAGE
+  HIGH_RISK_DEAL
+}
+
+/// Categorical urgency bucket for one alert. Distinct from `priorityScore` (an application-layer
+/// computed 0-100 ranking derived from severity + deal value + age, per TAD SS34's "priority
+/// score based on severity, value, and age") - severity is rule-driven and coarse, priorityScore
+/// is for sorting/display.
+enum DealHealthSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DealHealthAlertStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ---------------------------------------------------------------------------
 // Identity
 // ---------------------------------------------------------------------------
 
@@ -145,12 +173,13 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  customer               Customer?         @relation(fields: [customerId], references: [id])
-  quotationsAsRep        Quotation[]       @relation("QuotationSalesRep")
-  approvalDecisions      ApprovalRecord[]  @relation("ApprovalActor")
-  paymentsRecorded       Payment[]         @relation("PaymentRecordedBy")
-  customerCommentsAuthor CustomerComment[] @relation("CommentAuthor")
-  auditLogs              AuditLog[]        @relation("AuditActor")
+  customer                 Customer?         @relation(fields: [customerId], references: [id])
+  quotationsAsRep          Quotation[]       @relation("QuotationSalesRep")
+  approvalDecisions        ApprovalRecord[]  @relation("ApprovalActor")
+  paymentsRecorded         Payment[]         @relation("PaymentRecordedBy")
+  customerCommentsAuthor   CustomerComment[] @relation("CommentAuthor")
+  auditLogs                AuditLog[]        @relation("AuditActor")
+  dealHealthAlertsResolved DealHealthAlert[] @relation("DealHealthAlertResolvedBy")
 
   @@index([customerId])
   @@map("users")
@@ -353,16 +382,17 @@ model Quotation {
   createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  customer      Customer           @relation(fields: [customerId], references: [id])
-  salesRep      User               @relation("QuotationSalesRep", fields: [salesRepId], references: [id])
-  priceList     PriceList          @relation(fields: [priceListId], references: [id])
-  lines         QuotationLine[]
-  versions      QuotationVersion[]
-  negotiations  Negotiation[]
-  fulfillment   Fulfillment?
-  invoices      Invoice[]
-  subscriptions Subscription[]
-  comments      CustomerComment[]
+  customer         Customer           @relation(fields: [customerId], references: [id])
+  salesRep         User               @relation("QuotationSalesRep", fields: [salesRepId], references: [id])
+  priceList        PriceList          @relation(fields: [priceListId], references: [id])
+  lines            QuotationLine[]
+  versions         QuotationVersion[]
+  negotiations     Negotiation[]
+  fulfillment      Fulfillment?
+  invoices         Invoice[]
+  subscriptions    Subscription[]
+  comments         CustomerComment[]
+  dealHealthAlerts DealHealthAlert[]
 
   @@index([status, updatedAt(sort: Desc)])
   @@index([customerId, createdAt(sort: Desc)])
@@ -807,4 +837,40 @@ model NotificationOutbox {
 
   @@index([status, nextAttemptAt])
   @@map("notification_outbox")
+}
+
+/// One deterministic alert per (quotation, indicator type) - TAD SS34's four MVP indicators.
+/// The compound unique constraint is the idempotency mechanism: re-evaluating a quotation
+/// upserts this same row rather than inserting a duplicate, so a BullMQ retry or an overlapping
+/// scheduled + on-demand evaluation can never produce two open alerts for the same condition.
+model DealHealthAlert {
+  id               String                @id @default(uuid()) @db.Uuid
+  quotationId      String                @map("quotation_id") @db.Uuid
+  type             DealHealthAlertType
+  status           DealHealthAlertStatus @default(OPEN)
+  severity         DealHealthSeverity
+  /// Deterministic 0-100 ranking from severity + deal value + age (TAD SS34); `dealValue` below
+  /// is the ranking's input snapshot, kept queryable for sorting/display - `ageDays` is not
+  /// separately stored since it is trivially derivable from the quotation's own createdAt.
+  priorityScore    Int                   @map("priority_score")
+  /// Quotation net value at evaluation time - the "deal value" input to priorityScore.
+  dealValue        Decimal               @map("deal_value") @db.Decimal(14, 2)
+  /// Rule-specific explanatory data (thresholds, baseline/current/delta, dates, risk score,
+  /// approval age) - shape depends on `type`; see src/modules/deal-health/domain/rules/*.
+  details          Json
+  /// First detected for the current open episode; unchanged while the same alert stays OPEN,
+  /// reset when a resolved/dismissed alert reopens for a new episode.
+  detectedAt       DateTime              @map("detected_at") @db.Timestamptz(6)
+  resolvedAt       DateTime?             @map("resolved_at") @db.Timestamptz(6)
+  /// Set only when a manager/admin manually dismisses (never set by the automatic resolver).
+  resolvedByUserId String?               @map("resolved_by_user_id") @db.Uuid
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  quotation      Quotation @relation(fields: [quotationId], references: [id])
+  resolvedByUser User?     @relation("DealHealthAlertResolvedBy", fields: [resolvedByUserId], references: [id])
+
+  @@unique([quotationId, type])
+  @@index([status, priorityScore(sort: Desc)])
+  @@map("deal_health_alerts")
 }
