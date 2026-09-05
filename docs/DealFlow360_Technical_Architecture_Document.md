@@ -7,12 +7,12 @@
 
 ## Decision notation
 
-| Tag                               | Meaning                                                          |
-| --------------------------------- | ---------------------------------------------------------------- |
-| **PS REQUIREMENT**                | Explicit behavior from the Product Specification.                |
-| **ARCHITECTURAL DECISION**        | A technical choice needed to implement the PS or this TAD brief. |
-| **HACKATHON SHORTCUT**            | Deliberate 15-hour simplification with a known limitation.       |
-| **FUTURE PRODUCTION ENHANCEMENT** | Deferred hardening or scale work.                                |
+| Tag | Meaning |
+|---|---|
+| **PS REQUIREMENT** | Explicit behavior from the Product Specification. |
+| **ARCHITECTURAL DECISION** | A technical choice needed to implement the PS or this TAD brief. |
+| **HACKATHON SHORTCUT** | Deliberate 15-hour simplification with a known limitation. |
+| **FUTURE PRODUCTION ENHANCEMENT** | Deferred hardening or scale work. |
 
 ## 1 Project context
 
@@ -26,20 +26,20 @@ The critical path is quotation to payment. File conversion and collaboration are
 
 ## 3 Fixed technology stack
 
-| Layer          | Choice                                                                                | Classification             |
-| -------------- | ------------------------------------------------------------------------------------- | -------------------------- |
-| UI             | Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui                        | Fixed                      |
-| Forms          | React Hook Form plus shared Zod schemas                                               | Fixed                      |
-| Backend        | Next.js Route Handlers and Node.js services                                           | Fixed                      |
-| Authentication | Clerk Next.js SDK for authentication; server-enforced role and resource authorization | Architectural decision     |
-| Database       | PostgreSQL in Docker locally; AWS RDS for PostgreSQL in production                    | Fixed                      |
-| ORM            | Prisma ORM, pinned to one tested version                                              | Architectural decision     |
-| Realtime       | Socket.IO for application events                                                      | Fixed                      |
-| Email          | Resend HTTP API behind a provider interface                                           | Architectural decision     |
-| Worker jobs    | BullMQ with Redis; PostgreSQL outbox for durable dispatch intent                      | Architectural decision     |
-| Reporting      | Recharts, `pdf-lib` for PDF, and ExcelJS for XLSX                                     | Fixed plus design          |
-| Collaboration  | Tiptap plus Yjs and Hocuspocus, time-boxed                                            | Architectural decision, P2 |
-| Deployment     | Single Dockerized Node process on AWS plus RDS                                        | Fixed boundary             |
+| Layer | Choice | Classification |
+|---|---|---|
+| UI | Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui | Fixed |
+| Forms | React Hook Form plus shared Zod schemas | Fixed |
+| Backend | Next.js Route Handlers and Node.js services | Fixed |
+| Authentication | Clerk Next.js SDK for authentication; server-enforced role and resource authorization | Architectural decision |
+| Database | PostgreSQL in Docker locally; AWS RDS for PostgreSQL in production | Fixed |
+| ORM | Prisma ORM, pinned to one tested version | Architectural decision |
+| Realtime | Socket.IO for application events | Fixed |
+| Email | Resend HTTP API behind a provider interface | Architectural decision |
+| Worker jobs | BullMQ with Redis; PostgreSQL outbox for durable dispatch intent | Architectural decision |
+| Reporting | Recharts, `pdf-lib` for PDF, and ExcelJS for XLSX | Fixed plus design |
+| Collaboration | Tiptap plus Yjs and Hocuspocus, time-boxed | Architectural decision, P2 |
+| Deployment | Single Dockerized Node process on AWS plus RDS | Fixed boundary |
 
 Prisma is an ORM and migration/data-access tool; PostgreSQL remains the database. Current Prisma documentation supports PostgreSQL, Next.js, transactions, idempotent operations, and optimistic concurrency. Pin Node, Next.js, Prisma, and lockfile versions at project start rather than upgrading during the hackathon.
 
@@ -87,18 +87,18 @@ Socket.IO rooms and delivery are transient. Socket.IO preserves ordering for rec
 
 ## 6 Roles and permissions
 
-| Capability                                         |                               Admin |        Sales Rep |             Manager |         Finance or Ops |                         Customer |
-| -------------------------------------------------- | ----------------------------------: | ---------------: | ------------------: | ---------------------: | -------------------------------: |
-| Configure products, price lists, warehouses, plans |                                 Yes |               No |                  No | Operational stock only |                               No |
-| Configure discount tiers and approval chain        |                                 Yes |               No |                 Yes |                     No |                               No |
-| Create and revise assigned quotations              |                       No by default |              Yes |                Read |                   Read |             Request changes only |
-| Manager approval                                   |                       No by default |               No |                 Yes |                     No |                               No |
-| Finance approval                                   |                       No by default |               No |                  No |                    Yes |                               No |
-| Accept or override fulfillment split               |                       No by default |            Track |                Read |                    Yes |                               No |
-| Manage billing and record payment                  |                       No by default |            Track |                Read |                    Yes |                               No |
-| Negotiate and confirm                              |                                  No |          Respond |                Read |                   Read |               Own quotation only |
-| Platform reporting                                 |                                 Yes |   Assigned scope |          Team scope |      Operational scope |                               No |
-| Document access                                    | By associated record and permission | Assigned records | Team/routed records |    Operational records | Explicit own-customer permission |
+| Capability | Admin | Sales Rep | Manager | Finance or Ops | Customer |
+|---|---:|---:|---:|---:|---:|
+| Configure products, price lists, warehouses, plans | Yes | No | No | Operational stock only | No |
+| Configure discount tiers and approval chain | Yes | No | Yes | No | No |
+| Create and revise assigned quotations | No by default | Yes | Read | Read | Request changes only |
+| Manager approval | No by default | No | Yes | No | No |
+| Finance approval | No by default | No | No | Yes | No |
+| Accept or override fulfillment split | No by default | Track | Read | Yes | No |
+| Manage billing and record payment | No by default | Track | Read | Yes | No |
+| Negotiate and confirm | No | Respond | Read | Read | Own quotation only |
+| Platform reporting | Yes | Assigned scope | Team scope | Operational scope | No |
+| Document access | By associated record and permission | Assigned records | Team/routed records | Operational records | Explicit own-customer permission |
 
 Frontend route hiding is convenience only. Every Server Action, Route Handler, Socket.IO join, and BullMQ job entry point calls the shared `authorize(actor, action, resource)` policy after Clerk authentication. Customer authorization always includes `resource.customerId === actor.customerId`; IDs supplied by the browser or job payload never establish ownership.
 
@@ -128,75 +128,75 @@ The claim is a fast role hint, not proof that a user owns a deal. `requireRole()
 
 ## 8 Modular monolith modules
 
-| Module                | Responsibility and owned data                                 | Main services and APIs               | Events                   | Dependencies            |
-| --------------------- | ------------------------------------------------------------- | ------------------------------------ | ------------------------ | ----------------------- |
-| Authentication        | Clerk identity/session integration and webhook sync           | Clerk adapter; `/api/webhooks/clerk` | `user:synced`            | Users                   |
-| Users and Roles       | App identity mirror, roles, permissions and resource policies | UserService, AuthorizationService    | none                     | Clerk                   |
-| Customers             | Buyer and ownership boundary                                  | CustomerService                      | `customer:updated`       | Tiers                   |
-| Customer Tiers        | Tier prices and ceilings                                      | TierService                          | `rules:updated`          | Discounts               |
-| Products              | Sellable items and variants                                   | ProductService                       | `product:updated`        | Categories              |
-| Product Categories    | Classification and category ceiling                           | CategoryService                      | `rules:updated`          | Products                |
-| Price Lists           | Tier/currency prices                                          | PricingService                       | `pricing:updated`        | Products, Tiers         |
-| Discount Rules        | Tier/category ceilings                                        | DiscountRuleService                  | `rules:updated`          | Pricing                 |
-| Quotations            | Aggregate, lines, versions, lifecycle                         | QuotationService; `/api/quotations`  | `quotation:*`            | Pricing, Risk           |
-| Discount and Risk     | Deterministic evaluation                                      | RiskService                          | `quotation:risk-updated` | Rules, Margin           |
-| Approval              | Automatic chain and decisions                                 | ApprovalService                      | `approval:*`             | Risk, Audit             |
-| Recommendations       | Explainable top-K products                                    | RecommendationService                | `recommendation:updated` | Products, Margin, Stock |
-| Warehouses            | Warehouse configuration                                       | WarehouseService                     | `warehouse:updated`      | Admin                   |
-| Stock                 | Availability and reservations                                 | StockService                         | `stock:updated`          | PostgreSQL transaction  |
-| Fulfillment           | Suggested and manual allocations                              | FulfillmentService                   | `fulfillment:updated`    | Stock, Optimizer        |
-| Backorders            | Remaining demand and consolidation                            | BackorderService                     | `backorder:updated`      | Fulfillment             |
-| Subscription Plans    | Cadence and adjustment rules                                  | PlanService                          | `plan:updated`           | Products                |
-| Subscriptions         | Customer recurring commitments                                | SubscriptionService                  | `subscription:updated`   | Plans                   |
-| Billing               | One-time and recurring calculation                            | BillingService                       | `billing:updated`        | Subscriptions           |
-| Invoices              | Billing documents and status                                  | InvoiceService                       | `invoice:updated`        | Billing                 |
-| Payments              | Idempotent manual payment records                             | PaymentService                       | `payment:recorded`       | Invoice, Audit          |
-| Negotiation           | Comments, requests, counter terms                             | NegotiationService                   | `negotiation:*`          | Quotation, Risk         |
-| Deal Health           | Deterministic alerts                                          | DealHealthService                    | `deal-health:updated`    | Quotations, Fulfillment |
-| Audit Trail           | Immutable business evidence                                   | AuditService                         | none                     | All mutations           |
-| Notifications         | Outbox, Socket.IO, email                                      | NotificationService                  | all external events      | Outbox                  |
-| Jobs                  | Durable dispatch and BullMQ processing                        | JobDispatcher, WorkerRegistry        | `job:*`                  | Outbox, Redis           |
-| Files and Documents   | Metadata, versions and association                            | DocumentService                      | `document:updated`       | Filesystem/S3           |
-| Collaborative Editing | Yjs rooms and snapshots                                       | CollaborationService                 | `document:presence`      | Documents               |
-| Reporting             | Aggregated queries and chart DTOs                             | ReportService                        | none                     | Core tables             |
-| Export                | PDF/XLS/CSV generation                                        | ExportService                        | `export:ready`           | Reporting, Documents    |
+| Module | Responsibility and owned data | Main services and APIs | Events | Dependencies |
+|---|---|---|---|---|
+| Authentication | Clerk identity/session integration and webhook sync | Clerk adapter; `/api/webhooks/clerk` | `user:synced` | Users |
+| Users and Roles | App identity mirror, roles, permissions and resource policies | UserService, AuthorizationService | none | Clerk |
+| Customers | Buyer and ownership boundary | CustomerService | `customer:updated` | Tiers |
+| Customer Tiers | Tier prices and ceilings | TierService | `rules:updated` | Discounts |
+| Products | Sellable items and variants | ProductService | `product:updated` | Categories |
+| Product Categories | Classification and category ceiling | CategoryService | `rules:updated` | Products |
+| Price Lists | Tier/currency prices | PricingService | `pricing:updated` | Products, Tiers |
+| Discount Rules | Tier/category ceilings | DiscountRuleService | `rules:updated` | Pricing |
+| Quotations | Aggregate, lines, versions, lifecycle | QuotationService; `/api/quotations` | `quotation:*` | Pricing, Risk |
+| Discount and Risk | Deterministic evaluation | RiskService | `quotation:risk-updated` | Rules, Margin |
+| Approval | Automatic chain and decisions | ApprovalService | `approval:*` | Risk, Audit |
+| Recommendations | Explainable top-K products | RecommendationService | `recommendation:updated` | Products, Margin, Stock |
+| Warehouses | Warehouse configuration | WarehouseService | `warehouse:updated` | Admin |
+| Stock | Availability and reservations | StockService | `stock:updated` | PostgreSQL transaction |
+| Fulfillment | Suggested and manual allocations | FulfillmentService | `fulfillment:updated` | Stock, Optimizer |
+| Backorders | Remaining demand and consolidation | BackorderService | `backorder:updated` | Fulfillment |
+| Subscription Plans | Cadence and adjustment rules | PlanService | `plan:updated` | Products |
+| Subscriptions | Customer recurring commitments | SubscriptionService | `subscription:updated` | Plans |
+| Billing | One-time and recurring calculation | BillingService | `billing:updated` | Subscriptions |
+| Invoices | Billing documents and status | InvoiceService | `invoice:updated` | Billing |
+| Payments | Idempotent manual payment records | PaymentService | `payment:recorded` | Invoice, Audit |
+| Negotiation | Comments, requests, counter terms | NegotiationService | `negotiation:*` | Quotation, Risk |
+| Deal Health | Deterministic alerts | DealHealthService | `deal-health:updated` | Quotations, Fulfillment |
+| Audit Trail | Immutable business evidence | AuditService | none | All mutations |
+| Notifications | Outbox, Socket.IO, email | NotificationService | all external events | Outbox |
+| Jobs | Durable dispatch and BullMQ processing | JobDispatcher, WorkerRegistry | `job:*` | Outbox, Redis |
+| Files and Documents | Metadata, versions and association | DocumentService | `document:updated` | Filesystem/S3 |
+| Collaborative Editing | Yjs rooms and snapshots | CollaborationService | `document:presence` | Documents |
+| Reporting | Aggregated queries and chart DTOs | ReportService | none | Core tables |
+| Export | PDF/XLS/CSV generation | ExportService | `export:ready` | Reporting, Documents |
 
 Modules may read another module through its service interface. Route handlers do not write Prisma models directly. Cross-module circular calls are avoided by orchestrators such as `SubmitQuotationUseCase` and `ConfirmNegotiationUseCase`.
 
 ### Module business rules
 
-| Module                | Enforced rule                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Authentication        | A valid Clerk session identifies the actor; absent or invalid sessions are rejected.                          |
-| Users and Roles       | Clerk claims provide the role hint; backend policy and PostgreSQL ownership checks remain mandatory.          |
-| Customers             | Portal queries always constrain both resource ID and authenticated customer ID.                               |
-| Customer Tiers        | Tier configuration feeds pricing and discount limits; Bronze/Silver/Gold are seed examples.                   |
-| Products              | Only active products/variants with resolvable prices can enter a submitted quote.                             |
-| Product Categories    | Category ceiling participates in per-line discount evaluation.                                                |
-| Price Lists           | Resolve a deterministic price by customer tier and currency; overlap is rejected by configuration validation. |
-| Discount Rules        | Use the configured tier/category ceiling and preserve the evaluated rule version.                             |
-| Quotations            | Only the state machine can change lifecycle; every commercial edit increments version.                        |
-| Discount and Risk     | Evaluate all lines and the blended pattern; return a component explanation.                                   |
-| Approval              | Create the chain automatically; manager precedes Finance; decisions target one quote version.                 |
-| Recommendations       | Exclude below-margin candidates; every score is explainable.                                                  |
-| Warehouses            | Configuration supplies stock, replenishment, shipping cost and delivery inputs.                               |
-| Stock                 | Never reserve more than available; reserve inside a transaction.                                              |
-| Fulfillment           | Suggested or manual plans must pass the same stock feasibility validation.                                    |
-| Backorders            | Persist unfilled quantity and reevaluate consolidation when stock arrives.                                    |
-| Subscription Plans    | Cadence is monthly, quarterly or yearly; proration/cancellation rules are configured.                         |
-| Subscriptions         | Mid-cycle changes create an adjustment and revised schedule rather than mutating history silently.            |
-| Billing               | One-time and recurring lines share an order but receive separate billing treatment.                           |
-| Invoices              | Status derives from issued amount, payments and credits; direct arbitrary status writes are forbidden.        |
-| Payments              | Record manually and idempotently; no real gateway is part of MVP.                                             |
-| Negotiation           | Accepted changed terms create a new quote version and re-run margin/risk/approval.                            |
-| Deal Health           | MVP rules are deterministic, configurable and stored with explanations.                                       |
-| Audit Trail           | Approval, rejection and edit evidence includes actor, timestamp, state change and reason.                     |
-| Notifications         | Database commit precedes Socket.IO/email; provider failure cannot undo business state.                        |
-| Jobs                  | Payloads contain identifiers, not authoritative snapshots; workers reload state and are retry-safe.           |
-| Files and Documents   | Bytes remain outside PostgreSQL; metadata, access and versions remain inside it.                              |
-| Collaborative Editing | Yjs resolves text conflicts; authorization is checked before joining a document room.                         |
-| Reporting             | Queries honor the actor's data scope and use the same persisted state as operational screens.                 |
-| Export                | Export reflects the selected filters and never bypasses report authorization.                                 |
+| Module | Enforced rule |
+|---|---|
+| Authentication | A valid Clerk session identifies the actor; absent or invalid sessions are rejected. |
+| Users and Roles | Clerk claims provide the role hint; backend policy and PostgreSQL ownership checks remain mandatory. |
+| Customers | Portal queries always constrain both resource ID and authenticated customer ID. |
+| Customer Tiers | Tier configuration feeds pricing and discount limits; Bronze/Silver/Gold are seed examples. |
+| Products | Only active products/variants with resolvable prices can enter a submitted quote. |
+| Product Categories | Category ceiling participates in per-line discount evaluation. |
+| Price Lists | Resolve a deterministic price by customer tier and currency; overlap is rejected by configuration validation. |
+| Discount Rules | Use the configured tier/category ceiling and preserve the evaluated rule version. |
+| Quotations | Only the state machine can change lifecycle; every commercial edit increments version. |
+| Discount and Risk | Evaluate all lines and the blended pattern; return a component explanation. |
+| Approval | Create the chain automatically; manager precedes Finance; decisions target one quote version. |
+| Recommendations | Exclude below-margin candidates; every score is explainable. |
+| Warehouses | Configuration supplies stock, replenishment, shipping cost and delivery inputs. |
+| Stock | Never reserve more than available; reserve inside a transaction. |
+| Fulfillment | Suggested or manual plans must pass the same stock feasibility validation. |
+| Backorders | Persist unfilled quantity and reevaluate consolidation when stock arrives. |
+| Subscription Plans | Cadence is monthly, quarterly or yearly; proration/cancellation rules are configured. |
+| Subscriptions | Mid-cycle changes create an adjustment and revised schedule rather than mutating history silently. |
+| Billing | One-time and recurring lines share an order but receive separate billing treatment. |
+| Invoices | Status derives from issued amount, payments and credits; direct arbitrary status writes are forbidden. |
+| Payments | Record manually and idempotently; no real gateway is part of MVP. |
+| Negotiation | Accepted changed terms create a new quote version and re-run margin/risk/approval. |
+| Deal Health | MVP rules are deterministic, configurable and stored with explanations. |
+| Audit Trail | Approval, rejection and edit evidence includes actor, timestamp, state change and reason. |
+| Notifications | Database commit precedes Socket.IO/email; provider failure cannot undo business state. |
+| Jobs | Payloads contain identifiers, not authoritative snapshots; workers reload state and are retry-safe. |
+| Files and Documents | Bytes remain outside PostgreSQL; metadata, access and versions remain inside it. |
+| Collaborative Editing | Yjs resolves text conflicts; authorization is checked before joining a document room. |
+| Reporting | Queries honor the actor's data scope and use the same persisted state as operational screens. |
+| Export | Export reflects the selected filters and never bypasses report authorization. |
 
 ## 9 Quotation engine
 
@@ -323,12 +323,12 @@ Normalize components to `[0,1]`; store weights in `recommendation_config`. Exclu
 
 ## 16 Heap and priority queue use
 
-| Use                  | Structure                               | Complexity                            |          Expected size | Decision                                               |
-| -------------------- | --------------------------------------- | ------------------------------------- | ---------------------: | ------------------------------------------------------ |
-| Warehouse ranking    | Max heap of eligible warehouses         | heapify `O(n)`; pop/update `O(log n)` |                   2-50 | Useful when scores change as remaining demand changes. |
-| Recommendation top-K | Min heap of best K                      | `O(n log k)` time, `O(k)` space       |   10-10,000 candidates | Use only beyond a simple-sort threshold.               |
-| Approval queue       | Database `ORDER BY`, not in-memory heap | indexed query `O(log n + k)`          |   many persistent rows | Sorting/querying is simpler and survives restarts.     |
-| Deal-health alerts   | Database priority column and index      | indexed top-K                         | many persistent alerts | Do not keep authoritative alerts in a heap.            |
+| Use | Structure | Complexity | Expected size | Decision |
+|---|---|---|---:|---|
+| Warehouse ranking | Max heap of eligible warehouses | heapify `O(n)`; pop/update `O(log n)` | 2-50 | Useful when scores change as remaining demand changes. |
+| Recommendation top-K | Min heap of best K | `O(n log k)` time, `O(k)` space | 10-10,000 candidates | Use only beyond a simple-sort threshold. |
+| Approval queue | Database `ORDER BY`, not in-memory heap | indexed query `O(log n + k)` | many persistent rows | Sorting/querying is simpler and survives restarts. |
+| Deal-health alerts | Database priority column and index | indexed top-K | many persistent alerts | Do not keep authoritative alerts in a heap. |
 
 ## 17 Configurable benefit and loss scoring
 
@@ -355,16 +355,16 @@ flowchart LR
   G --> H[Emit document updated]
 ```
 
-| Conversion           | MVP support                 | Implementation                    | Fidelity                                          |
-| -------------------- | --------------------------- | --------------------------------- | ------------------------------------------------- |
-| XLSX -> CSV          | Full for selected worksheet | ExcelJS plus CSV writer           | Values only; styles/formulas may be lost.         |
-| CSV -> XLSX          | Full                        | CSV parser plus ExcelJS           | Basic workbook, no inferred complex formatting.   |
-| TXT -> preview       | Full                        | escaped text                      | Exact text.                                       |
-| Images -> thumbnails | Full                        | Sharp                             | Controlled resize.                                |
-| PDF -> preview       | Full                        | browser/pdfjs rendering           | Visual preview, not editing.                      |
-| DOCX -> TXT/HTML     | Partial                     | Mammoth                           | Semantic content; layout fidelity not guaranteed. |
-| DOCX -> PDF          | Future or external          | LibreOffice/service in production | High fidelity cannot be promised in-process.      |
-| PDF -> editable DOCX | Future external service     | Specialized conversion provider   | Explicitly lossy.                                 |
+| Conversion | MVP support | Implementation | Fidelity |
+|---|---|---|---|
+| XLSX -> CSV | Full for selected worksheet | ExcelJS plus CSV writer | Values only; styles/formulas may be lost. |
+| CSV -> XLSX | Full | CSV parser plus ExcelJS | Basic workbook, no inferred complex formatting. |
+| TXT -> preview | Full | escaped text | Exact text. |
+| Images -> thumbnails | Full | Sharp | Controlled resize. |
+| PDF -> preview | Full | browser/pdfjs rendering | Visual preview, not editing. |
+| DOCX -> TXT/HTML | Partial | Mammoth | Semantic content; layout fidelity not guaranteed. |
+| DOCX -> PDF | Future or external | LibreOffice/service in production | High fidelity cannot be promised in-process. |
+| PDF -> editable DOCX | Future external service | Specialized conversion provider | Explicitly lossy. |
 
 ## 20 Realtime collaborative editing decision
 
@@ -400,19 +400,19 @@ Local filesystem is acceptable only for local/single-instance hackathon use. Pro
 
 Rooms are server-authorized: `user:{id}`, `role:{role}`, `quotation:{id}`, `customer:{id}`, `warehouse:{id}`, `document:{id}`. Socket.IO rooms are server-only channels ([Socket.IO rooms](https://socket.io/docs/v4/rooms/)). The handshake resolves the Clerk session and app user; each join rechecks resource access.
 
-| Event                         | Producer                       | Room                          | Payload                                                   |
-| ----------------------------- | ------------------------------ | ----------------------------- | --------------------------------------------------------- |
-| `quotation:created/updated`   | Quotation service after commit | quotation, assigned user      | id, version, state, changed fields                        |
-| `approval:created/updated`    | Approval service               | approver user/role, quotation | approval id, quote id, status                             |
-| `negotiation:created/updated` | Negotiation service            | quotation, customer, rep      | ids, status, version                                      |
-| `stock:updated`               | Stock service                  | warehouse                     | product id, available summary                             |
-| `fulfillment:updated`         | Fulfillment service            | quotation                     | fulfillment id, status                                    |
-| `invoice:updated`             | Invoice service                | quotation and authorized user | invoice id, status                                        |
-| `payment:recorded`            | Payment service                | quotation                     | payment id, invoice status                                |
-| `deal-health:updated`         | Deal health service            | manager role                  | alert id, type, priority                                  |
-| `recommendation:updated`      | Recommendation service         | quotation                     | top-K ids and explanation codes                           |
-| `document:updated/presence`   | Document/collab service        | document                      | version metadata or ephemeral presence                    |
-| `export:queued/ready/failed`  | Export API/worker              | requesting user               | export id, status, format; authorized URL only on refetch |
+| Event | Producer | Room | Payload |
+|---|---|---|---|
+| `quotation:created/updated` | Quotation service after commit | quotation, assigned user | id, version, state, changed fields |
+| `approval:created/updated` | Approval service | approver user/role, quotation | approval id, quote id, status |
+| `negotiation:created/updated` | Negotiation service | quotation, customer, rep | ids, status, version |
+| `stock:updated` | Stock service | warehouse | product id, available summary |
+| `fulfillment:updated` | Fulfillment service | quotation | fulfillment id, status |
+| `invoice:updated` | Invoice service | quotation and authorized user | invoice id, status |
+| `payment:recorded` | Payment service | quotation | payment id, invoice status |
+| `deal-health:updated` | Deal health service | manager role | alert id, type, priority |
+| `recommendation:updated` | Recommendation service | quotation | top-K ids and explanation codes |
+| `document:updated/presence` | Document/collab service | document | version metadata or ephemeral presence |
+| `export:queued/ready/failed` | Export API/worker | requesting user | export id, status, format; authorized URL only on refetch |
 
 Payloads never contain secrets, full customer datasets, or unrelated quote details. Clients receiving an event refetch via REST. Redis is already present for BullMQ, but Socket.IO keeps its in-memory adapter for the single-instance MVP. A Redis Socket.IO adapter is a separate, later decision when horizontal realtime scale is demonstrated.
 
@@ -457,14 +457,14 @@ Classify each quotation line as `ONE_TIME` or `RECURRING`. Confirmation creates 
 
 ## 26 Transaction management
 
-| Operation              | Atomic writes                                                            | Failure behavior                       |
-| ---------------------- | ------------------------------------------------------------------------ | -------------------------------------- |
-| Submit quotation       | version snapshot, risk result, approval chain or state, audit, outbox    | Roll back all; quote stays Draft.      |
-| Approval action        | conditional approval update, quote state, audit, outbox                  | Roll back; retry conflict returns 409. |
-| Negotiation acceptance | negotiation, quote version, totals, risk, approvals/state, audit, outbox | Roll back all changes.                 |
-| Stock allocation       | row locks, reservations, fulfillment items, backorder, audit, outbox     | Release locks and roll back.           |
-| Payment                | unique idempotency record, payment, invoice totals/status, audit, outbox | No partial payment record.             |
-| Subscription change    | new schedule/adjustment, refund or credit note, audit, outbox            | Existing schedule remains.             |
+| Operation | Atomic writes | Failure behavior |
+|---|---|---|
+| Submit quotation | version snapshot, risk result, approval chain or state, audit, outbox | Roll back all; quote stays Draft. |
+| Approval action | conditional approval update, quote state, audit, outbox | Roll back; retry conflict returns 409. |
+| Negotiation acceptance | negotiation, quote version, totals, risk, approvals/state, audit, outbox | Roll back all changes. |
+| Stock allocation | row locks, reservations, fulfillment items, backorder, audit, outbox | Release locks and roll back. |
+| Payment | unique idempotency record, payment, invoice totals/status, audit, outbox | No partial payment record. |
+| Subscription change | new schedule/adjustment, refund or credit note, audit, outbox | Existing schedule remains. |
 
 Use Prisma interactive transactions with short timeouts. Do not call email or Socket.IO inside the transaction. Prisma documents transactions, serializable isolation, optimistic concurrency, and retryable write conflicts ([Prisma transactions](https://www.prisma.io/docs/orm/v6/prisma-client/queries/transactions)).
 
@@ -472,28 +472,28 @@ Use Prisma interactive transactions with short timeouts. Do not call email or So
 
 All tables use UUID primary keys, `created_at`, `updated_at`, and business-aggregate `version` where concurrent edits matter. Money uses `numeric(14,2)` plus currency; percentages use `numeric(7,4)` representing decimal fraction; timestamps use `timestamptz`.
 
-| Table                                                | Important columns and constraints                                                                                         |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| users, roles                                         | unique `clerk_user_id`; normalized email for display/search; role FK; customer FK nullable; active/sync status            |
-| customers, customer_tiers                            | tier FK; unique tier name                                                                                                 |
-| product_categories, products, product_variants       | category FK; unique SKU; nonnegative prices                                                                               |
-| price_lists, price_list_items                        | tier/currency; unique `(price_list_id, product_id, variant_id)`                                                           |
-| discount_rules, approval_rules                       | scope, ceiling, risk bands, effective status; checked percentage bounds                                                   |
-| quotations, quotation_lines, quotation_versions      | customer/rep FKs; lifecycle; version; immutable version payload/hash                                                      |
-| risk_evaluations                                     | quotation version FK unique; score, band, explanation JSONB, config version                                               |
-| approval_records                                     | quote version, step, role, status, actor, reason; unique version/step                                                     |
-| audit_logs                                           | actor, role, entity type/id, action, before/after JSONB, reason, timestamp                                                |
-| warehouses, warehouse_stock, stock_reservations      | unique warehouse/product; quantities with checks; reservation idempotency unique                                          |
-| fulfillments, fulfillment_items, backorders          | quote FK; warehouse/product allocation; status and remaining quantity                                                     |
-| subscription_plans, subscriptions, billing_schedules | cadence, rule JSONB, cycle dates, status                                                                                  |
-| invoices, invoice_lines, payments                    | invoice number unique; source line; payment idempotency unique; amounts checked                                           |
-| negotiations, change_requests                        | quote/version/customer FKs; status, requested terms                                                                       |
-| recommendations                                      | quote version/product unique; score, reasons JSONB, status                                                                |
-| deal_health_alerts                                   | quote, type, priority, status, detected/resolved timestamps                                                               |
-| documents, document_versions                         | association type/id, owner, storage key, MIME, checksum, size, version unique                                             |
-| document_permissions, document_collaborators         | document/user permission unique; collaborator session metadata                                                            |
-| notification_outbox                                  | event type, payload, status, attempts, next attempt, idempotency key unique                                               |
-| job_runs, export_requests                            | job type/status/attempts/BullMQ ID/idempotency key; requester, filters JSONB, format, document version, error, timestamps |
+| Table | Important columns and constraints |
+|---|---|
+| users, roles | unique `clerk_user_id`; normalized email for display/search; role FK; customer FK nullable; active/sync status |
+| customers, customer_tiers | tier FK; unique tier name |
+| product_categories, products, product_variants | category FK; unique SKU; nonnegative prices |
+| price_lists, price_list_items | tier/currency; unique `(price_list_id, product_id, variant_id)` |
+| discount_rules, approval_rules | scope, ceiling, risk bands, effective status; checked percentage bounds |
+| quotations, quotation_lines, quotation_versions | customer/rep FKs; lifecycle; version; immutable version payload/hash |
+| risk_evaluations | quotation version FK unique; score, band, explanation JSONB, config version |
+| approval_records | quote version, step, role, status, actor, reason; unique version/step |
+| audit_logs | actor, role, entity type/id, action, before/after JSONB, reason, timestamp |
+| warehouses, warehouse_stock, stock_reservations | unique warehouse/product; quantities with checks; reservation idempotency unique |
+| fulfillments, fulfillment_items, backorders | quote FK; warehouse/product allocation; status and remaining quantity |
+| subscription_plans, subscriptions, billing_schedules | cadence, rule JSONB, cycle dates, status |
+| invoices, invoice_lines, payments | invoice number unique; source line; payment idempotency unique; amounts checked |
+| negotiations, change_requests | quote/version/customer FKs; status, requested terms |
+| recommendations | quote version/product unique; score, reasons JSONB, status |
+| deal_health_alerts | quote, type, priority, status, detected/resolved timestamps |
+| documents, document_versions | association type/id, owner, storage key, MIME, checksum, size, version unique |
+| document_permissions, document_collaborators | document/user permission unique; collaborator session metadata |
+| notification_outbox | event type, payload, status, attempts, next attempt, idempotency key unique |
+| job_runs, export_requests | job type/status/attempts/BullMQ ID/idempotency key; requester, filters JSONB, format, document version, error, timestamps |
 
 ```mermaid
 erDiagram
@@ -531,31 +531,31 @@ Create composite indexes around real access paths: `quotations(status, updated_a
 
 All request bodies use Zod; responses use DTOs, never raw Prisma models. `ETag` or explicit `version` supports optimistic concurrency.
 
-| Method and endpoint                               | Request                               | Auth and authorization                             | Success                                       | Main errors                      |
-| ------------------------------------------------- | ------------------------------------- | -------------------------------------------------- | --------------------------------------------- | -------------------------------- |
-| Clerk hosted/component sign-in and sign-up        | identity-provider flow                | Clerk                                              | managed session                               | handled by Clerk                 |
-| POST `/api/webhooks/clerk`                        | signed Clerk event                    | verify webhook signature                           | synchronized app user                         | INVALID_SIGNATURE                |
-| GET/POST `/api/customers`                         | filters or customer                   | internal scoped/Admin create                       | list/customer                                 | FORBIDDEN                        |
-| GET/POST `/api/products`                          | filters or product                    | internal/Admin write                               | products                                      | VALIDATION                       |
-| GET `/api/price-lists`                            | customer, currency                    | internal                                           | resolved prices                               | NOT_FOUND                        |
-| POST `/api/quotations`                            | customer                              | Sales Rep                                          | Draft                                         | FORBIDDEN                        |
-| GET/PATCH `/api/quotations/:id`                   | patch plus expectedVersion            | resource access/Rep mutate                         | quote                                         | VERSION_CONFLICT                 |
-| POST `/api/quotations/:id/submit`                 | expectedVersion                       | owning Rep                                         | state, risk, approvals                        | INVALID_STATE                    |
-| GET `/api/approvals`                              | status filters                        | Manager/Finance scope                              | queue                                         | FORBIDDEN                        |
-| POST `/api/approvals/:id/{approve,reject,return}` | reason, expectedVersion               | assigned step role                                 | decision                                      | ALREADY_ACTIONED                 |
-| POST `/api/quotations/:id/negotiate`              | comment/change/counter                | owning Customer                                    | negotiation                                   | FORBIDDEN                        |
-| POST `/api/quotations/:id/confirm`                | expectedVersion                       | owning Customer                                    | confirmation/approval route                   | VERSION_CONFLICT                 |
-| POST `/api/quotations/:id/allocate`               | suggested/manual plan, key            | Finance/Ops                                        | fulfillment                                   | INSUFFICIENT_STOCK               |
-| GET `/api/invoices`                               | filters                               | Finance/Ops or scoped view                         | invoices                                      | FORBIDDEN                        |
-| POST `/api/invoices/:id/payment`                  | amount, idempotencyKey                | Finance/Ops                                        | payment/invoice                               | DUPLICATE_REQUEST                |
-| GET `/api/deal-health`                            | filters                               | Manager/Admin                                      | alerts                                        | FORBIDDEN                        |
-| POST `/api/recommendations`                       | quotationVersionId                    | Rep access                                         | top-K                                         | NOT_FOUND                        |
-| POST/GET `/api/documents`                         | multipart or filters                  | associated-record access                           | metadata                                      | FILE_REJECTED                    |
-| GET `/api/documents/:id`                          | none                                  | document permission                                | metadata/download URL                         | FORBIDDEN                        |
-| POST `/api/documents/:id/convert`                 | target format                         | document write                                     | conversion/version                            | UNSUPPORTED_CONVERSION           |
-| POST `/api/documents/:id/versions`                | content or storage key                | document write                                     | version                                       | VERSION_CONFLICT                 |
-| POST `/api/reports/exports`                       | report type, filters, `PDF` or `XLSX` | authenticated report permission and scoped filters | `202` export request/outbox status            | FORBIDDEN, EXPORT_LIMIT_EXCEEDED |
-| GET `/api/reports/exports/:id`                    | none                                  | requesting user or authorized Admin                | status and authorized download URL when ready | NOT_FOUND, FORBIDDEN             |
+| Method and endpoint | Request | Auth and authorization | Success | Main errors |
+|---|---|---|---|---|
+| Clerk hosted/component sign-in and sign-up | identity-provider flow | Clerk | managed session | handled by Clerk |
+| POST `/api/webhooks/clerk` | signed Clerk event | verify webhook signature | synchronized app user | INVALID_SIGNATURE |
+| GET/POST `/api/customers` | filters or customer | internal scoped/Admin create | list/customer | FORBIDDEN |
+| GET/POST `/api/products` | filters or product | internal/Admin write | products | VALIDATION |
+| GET `/api/price-lists` | customer, currency | internal | resolved prices | NOT_FOUND |
+| POST `/api/quotations` | customer | Sales Rep | Draft | FORBIDDEN |
+| GET/PATCH `/api/quotations/:id` | patch plus expectedVersion | resource access/Rep mutate | quote | VERSION_CONFLICT |
+| POST `/api/quotations/:id/submit` | expectedVersion | owning Rep | state, risk, approvals | INVALID_STATE |
+| GET `/api/approvals` | status filters | Manager/Finance scope | queue | FORBIDDEN |
+| POST `/api/approvals/:id/{approve,reject,return}` | reason, expectedVersion | assigned step role | decision | ALREADY_ACTIONED |
+| POST `/api/quotations/:id/negotiate` | comment/change/counter | owning Customer | negotiation | FORBIDDEN |
+| POST `/api/quotations/:id/confirm` | expectedVersion | owning Customer | confirmation/approval route | VERSION_CONFLICT |
+| POST `/api/quotations/:id/allocate` | suggested/manual plan, key | Finance/Ops | fulfillment | INSUFFICIENT_STOCK |
+| GET `/api/invoices` | filters | Finance/Ops or scoped view | invoices | FORBIDDEN |
+| POST `/api/invoices/:id/payment` | amount, idempotencyKey | Finance/Ops | payment/invoice | DUPLICATE_REQUEST |
+| GET `/api/deal-health` | filters | Manager/Admin | alerts | FORBIDDEN |
+| POST `/api/recommendations` | quotationVersionId | Rep access | top-K | NOT_FOUND |
+| POST/GET `/api/documents` | multipart or filters | associated-record access | metadata | FILE_REJECTED |
+| GET `/api/documents/:id` | none | document permission | metadata/download URL | FORBIDDEN |
+| POST `/api/documents/:id/convert` | target format | document write | conversion/version | UNSUPPORTED_CONVERSION |
+| POST `/api/documents/:id/versions` | content or storage key | document write | version | VERSION_CONFLICT |
+| POST `/api/reports/exports` | report type, filters, `PDF` or `XLSX` | authenticated report permission and scoped filters | `202` export request/outbox status | FORBIDDEN, EXPORT_LIMIT_EXCEEDED |
+| GET `/api/reports/exports/:id` | none | requesting user or authorized Admin | status and authorized download URL when ready | NOT_FOUND, FORBIDDEN |
 
 ## 30 API error format
 
@@ -618,22 +618,22 @@ Pages consume application services for initial reads. Route handlers parse reque
 
 ## 32 Security
 
-| Control            | 15-hour MVP                                                                       | Production hardening                                            |
-| ------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Authentication     | Clerk managed sessions; `auth()` at every protected resource                      | MFA, enterprise SSO, session policy and Clerk monitoring        |
-| Identity sync      | Unique `clerk_user_id`; signed webhook/seed sync; deny unknown users              | webhook replay protection and reconciliation job                |
-| Authorization      | Server-side Clerk role claim plus PostgreSQL resource ownership in every use case | custom permissions/Organizations, policy tests, least privilege |
-| Customer isolation | app user's `customer_id` joined in every portal query                             | database row-level security as defense in depth                 |
-| Validation         | Zod at API boundary and database constraints                                      | Contract fuzzing and schema versioning                          |
-| SQL injection      | Prisma parameterization; parameterized raw SQL only                               | Static analysis and query review                                |
-| XSS                | React escaping; sanitize collaborative rich text                                  | Strict CSP and dependency monitoring                            |
-| CSRF               | SameSite cookies plus Origin check on mutations                                   | Explicit CSRF token if cross-site flows emerge                  |
-| CORS               | Same-origin only                                                                  | Exact allowlist                                                 |
-| Headers            | HSTS in production, nosniff, frame restrictions, referrer policy                  | Maintained CSP with reporting                                   |
-| Rate limiting      | Clerk protections plus in-process limits for export/upload                        | shared gateway/WAF limiter                                      |
-| Files              | allowlist, MIME sniff, size cap, sanitized names, private path                    | Malware scan, S3 policies, encryption/KMS                       |
-| Secrets            | `.env.local`, never `NEXT_PUBLIC_*`                                               | AWS Secrets Manager and IAM roles                               |
-| Audit              | Append-only application writes                                                    | Tamper evidence, archive and retention policy                   |
+| Control | 15-hour MVP | Production hardening |
+|---|---|---|
+| Authentication | Clerk managed sessions; `auth()` at every protected resource | MFA, enterprise SSO, session policy and Clerk monitoring |
+| Identity sync | Unique `clerk_user_id`; signed webhook/seed sync; deny unknown users | webhook replay protection and reconciliation job |
+| Authorization | Server-side Clerk role claim plus PostgreSQL resource ownership in every use case | custom permissions/Organizations, policy tests, least privilege |
+| Customer isolation | app user's `customer_id` joined in every portal query | database row-level security as defense in depth |
+| Validation | Zod at API boundary and database constraints | Contract fuzzing and schema versioning |
+| SQL injection | Prisma parameterization; parameterized raw SQL only | Static analysis and query review |
+| XSS | React escaping; sanitize collaborative rich text | Strict CSP and dependency monitoring |
+| CSRF | SameSite cookies plus Origin check on mutations | Explicit CSRF token if cross-site flows emerge |
+| CORS | Same-origin only | Exact allowlist |
+| Headers | HSTS in production, nosniff, frame restrictions, referrer policy | Maintained CSP with reporting |
+| Rate limiting | Clerk protections plus in-process limits for export/upload | shared gateway/WAF limiter |
+| Files | allowlist, MIME sniff, size cap, sanitized names, private path | Malware scan, S3 policies, encryption/KMS |
+| Secrets | `.env.local`, never `NEXT_PUBLIC_*` | AWS Secrets Manager and IAM roles |
+| Audit | Append-only application writes | Tamper evidence, archive and retention policy |
 
 ## 33 Audit trail
 
@@ -643,12 +643,12 @@ Audit identity sync/role changes and every commercial mutation: quote creation, 
 
 Use a BullMQ scheduled `deal-health.evaluate` job plus an on-demand refresh path; persist alerts so they survive worker or Redis restarts.
 
-| Indicator         | Deterministic MVP rule                                                                                       | Configuration and explanation                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Stalled quotation | `now - last_business_activity_at > stalledDays` while state is active                                        | Store threshold and inactivity duration.                                   |
-| Discount anomaly  | current effective discount exceeds rep mean by configured percentage points or standard-deviation multiplier | If history is too small, do not alert; store baseline, lookback and delta. |
-| Delivery slippage | estimated ship/delivery date exceeds promised date                                                           | Store promised, current estimate and days late.                            |
-| High-risk deal    | latest risk band is HIGH or Finance approval pending beyond configured age                                   | Store risk score/band and age.                                             |
+| Indicator | Deterministic MVP rule | Configuration and explanation |
+|---|---|---|
+| Stalled quotation | `now - last_business_activity_at > stalledDays` while state is active | Store threshold and inactivity duration. |
+| Discount anomaly | current effective discount exceeds rep mean by configured percentage points or standard-deviation multiplier | If history is too small, do not alert; store baseline, lookback and delta. |
+| Delivery slippage | estimated ship/delivery date exceeds promised date | Store promised, current estimate and days late. |
+| High-risk deal | latest risk band is HIGH or Finance approval pending beyond configured age | Store risk score/band and age. |
 
 No ML is required. Use a priority score based on severity, value, and age for display; PostgreSQL remains authoritative.
 
@@ -662,25 +662,25 @@ The job stores the result as a generated `DocumentVersion` with the exact filter
 
 ## 36 Complete end-to-end technical flow
 
-| Step             | Frontend and API                               | Backend and database                                                                         | Realtime, email, audit                                           |
-| ---------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Login            | Clerk `<SignIn />` or hosted flow              | Clerk establishes session; app syncs/loads user by `clerk_user_id`                           | Clerk session event; app audits role changes only                |
-| Create quote     | Builder -> `POST /api/quotations`              | Insert Draft with customer/rep and version 1                                                 | `quotation:created`; create audit                                |
-| Add products     | `PATCH /api/quotations/:id`                    | Resolve price list, validate products, upsert lines, increment version                       | `quotation:updated`; audit material edits                        |
-| Apply discounts  | Same PATCH with expected version               | Calculate line/order discounts and margin                                                    | Updated event; discount-change audit                             |
-| Risk and submit  | `POST /submit`                                 | Freeze QuotationVersion, evaluate risk, create chain or approve                              | `approval:created` or quote update; approval email outbox; audit |
-| Manager approval | Approval action route                          | Conditional action, next step/state, audit in transaction                                    | `approval:updated`; Finance request email if needed              |
-| Finance approval | Same role-specific action                      | Final approval for version                                                                   | Quote/approval event and result email                            |
-| Recommendation   | `POST /api/recommendations` then Add           | Score candidates; accepted product becomes line; recalc margin/risk                          | `recommendation:updated`, `quotation:updated`; audit add         |
-| Warehouse plan   | Allocate preview then commit                   | Weighted greedy/heap; lock and reserve stock; create fulfillment/backorder                   | stock/fulfillment events; allocation audit                       |
-| Hybrid billing   | Billing view/confirm                           | Create invoice lines plus subscriptions/schedules                                            | invoice/billing events; invoice email outbox; audit              |
-| Portal access    | Separate portal route                          | Clerk identity plus app customer ownership filter loads safe DTO                             | Join customer/quote rooms after authorization                    |
-| Negotiation      | Portal request API                             | Save request; accepted terms create version and recalculate                                  | negotiation event/email; audit                                   |
-| Re-approval      | Automatic inside negotiation orchestration     | New approval records for new version                                                         | approval event/request email; audit                              |
-| Confirmation     | `POST /confirm`                                | Validate current version and state, mark Confirmed                                           | quote event and confirmation email; audit                        |
-| Payment          | Finance form -> payment route                  | Unique idempotency key, payment, invoice PAID in transaction                                 | payment/invoice events, receipt email, audit                     |
-| Health/reporting | Dashboard GETs                                 | Persist/retrieve alerts and aggregates                                                       | deal-health event on changes; no required email                  |
-| Report export    | Export PDF/XLS button -> create export request | Commit request/outbox; BullMQ worker builds `pdf-lib` PDF or ExcelJS XLSX and stores version | `export:queued/ready/failed`; audit request                      |
+| Step | Frontend and API | Backend and database | Realtime, email, audit |
+|---|---|---|---|
+| Login | Clerk `<SignIn />` or hosted flow | Clerk establishes session; app syncs/loads user by `clerk_user_id` | Clerk session event; app audits role changes only |
+| Create quote | Builder -> `POST /api/quotations` | Insert Draft with customer/rep and version 1 | `quotation:created`; create audit |
+| Add products | `PATCH /api/quotations/:id` | Resolve price list, validate products, upsert lines, increment version | `quotation:updated`; audit material edits |
+| Apply discounts | Same PATCH with expected version | Calculate line/order discounts and margin | Updated event; discount-change audit |
+| Risk and submit | `POST /submit` | Freeze QuotationVersion, evaluate risk, create chain or approve | `approval:created` or quote update; approval email outbox; audit |
+| Manager approval | Approval action route | Conditional action, next step/state, audit in transaction | `approval:updated`; Finance request email if needed |
+| Finance approval | Same role-specific action | Final approval for version | Quote/approval event and result email |
+| Recommendation | `POST /api/recommendations` then Add | Score candidates; accepted product becomes line; recalc margin/risk | `recommendation:updated`, `quotation:updated`; audit add |
+| Warehouse plan | Allocate preview then commit | Weighted greedy/heap; lock and reserve stock; create fulfillment/backorder | stock/fulfillment events; allocation audit |
+| Hybrid billing | Billing view/confirm | Create invoice lines plus subscriptions/schedules | invoice/billing events; invoice email outbox; audit |
+| Portal access | Separate portal route | Clerk identity plus app customer ownership filter loads safe DTO | Join customer/quote rooms after authorization |
+| Negotiation | Portal request API | Save request; accepted terms create version and recalculate | negotiation event/email; audit |
+| Re-approval | Automatic inside negotiation orchestration | New approval records for new version | approval event/request email; audit |
+| Confirmation | `POST /confirm` | Validate current version and state, mark Confirmed | quote event and confirmation email; audit |
+| Payment | Finance form -> payment route | Unique idempotency key, payment, invoice PAID in transaction | payment/invoice events, receipt email, audit |
+| Health/reporting | Dashboard GETs | Persist/retrieve alerts and aggregates | deal-health event on changes; no required email |
+| Report export | Export PDF/XLS button -> create export request | Commit request/outbox; BullMQ worker builds `pdf-lib` PDF or ExcelJS XLSX and stores version | `export:queued/ready/failed`; audit request |
 
 ## 37 File and document flow
 
@@ -690,24 +690,24 @@ Collaborative content is an application-native rich-text document, not an in-pla
 
 ## 38 Algorithm complexity
 
-| Algorithm            | Input and output                    | Method/data structure                 |                                                Time |                     Space | MVP difficulty        |
-| -------------------- | ----------------------------------- | ------------------------------------- | --------------------------------------------------: | ------------------------: | --------------------- |
-| Discount risk        | L lines -> score, band, explanation | Single pass accumulators              |                                              `O(L)` |        `O(L)` explanation | Low                   |
-| Warehouse allocation | W warehouses, L lines -> plan       | direct-plan scan plus max heap greedy |                                    `O(L * W log W)` |      `O(W + allocations)` | Medium                |
-| Recommendations      | C candidates -> top K               | filters plus score; sort or min heap  |                sort `O(C log C)`; heap `O(C log K)` |                    `O(K)` | Low                   |
-| Deal health          | Q changed deals -> alerts           | indexed rules and batch upserts       |                       `O(Q)` rule work plus DB cost |                `O(batch)` | Low                   |
-| Approval routing     | S configured steps -> chain         | threshold lookup and ordered insert   |                                      `O(log R + S)` |                    `O(S)` | Low                   |
-| Collaboration        | Yjs updates -> merged state         | mature CRDT                           | library-dependent, roughly update-size proportional | document/update dependent | High integration risk |
+| Algorithm | Input and output | Method/data structure | Time | Space | MVP difficulty |
+|---|---|---|---:|---:|---|
+| Discount risk | L lines -> score, band, explanation | Single pass accumulators | `O(L)` | `O(L)` explanation | Low |
+| Warehouse allocation | W warehouses, L lines -> plan | direct-plan scan plus max heap greedy | `O(L * W log W)` | `O(W + allocations)` | Medium |
+| Recommendations | C candidates -> top K | filters plus score; sort or min heap | sort `O(C log C)`; heap `O(C log K)` | `O(K)` | Low |
+| Deal health | Q changed deals -> alerts | indexed rules and batch upserts | `O(Q)` rule work plus DB cost | `O(batch)` | Low |
+| Approval routing | S configured steps -> chain | threshold lookup and ordered insert | `O(log R + S)` | `O(S)` | Low |
+| Collaboration | Yjs updates -> merged state | mature CRDT | library-dependent, roughly update-size proportional | document/update dependent | High integration risk |
 
 ## 39 Algorithm trade-offs
 
-| Problem         | Alternatives                                                    | Selected and why                                                                                                                                                                                         |
-| --------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Warehouse       | Weighted greedy, dynamic programming, ILP, brute force          | Weighted greedy plus direct-plan comparison is explainable, fast, and implementable. DP/ILP need more modeling, dependencies, and test time; brute force grows exponentially.                            |
+| Problem | Alternatives | Selected and why |
+|---|---|---|
+| Warehouse | Weighted greedy, dynamic programming, ILP, brute force | Weighted greedy plus direct-plan comparison is explainable, fast, and implementable. DP/ILP need more modeling, dependencies, and test time; brute force grows exponentially. |
 | Recommendations | Weighted score, collaborative filtering, association rules, LLM | Weighted co-purchase score is deterministic and explainable. Association rules can feed co-purchase later. Collaborative filtering needs data; LLM is inappropriate for deterministic pricing decisions. |
-| Risk            | Max violation, weighted score, learned model                    | Configurable weighted score captures breadth and severity. Max-only misses distributed erosion; ML lacks data and explainability.                                                                        |
-| Collaboration   | Custom OT, custom CRDT, Yjs                                     | Yjs is selected. Writing synchronization algorithms in 15 hours is unacceptable risk.                                                                                                                    |
-| Background jobs | BullMQ/Redis, database polling only, Kafka                      | BullMQ supplies workers, retries, backoff, concurrency and scheduling; the PostgreSQL outbox preserves dispatch intent when Redis is unavailable. Kafka is unnecessary.                                  |
+| Risk | Max violation, weighted score, learned model | Configurable weighted score captures breadth and severity. Max-only misses distributed erosion; ML lacks data and explainability. |
+| Collaboration | Custom OT, custom CRDT, Yjs | Yjs is selected. Writing synchronization algorithms in 15 hours is unacceptable risk. |
+| Background jobs | BullMQ/Redis, database polling only, Kafka | BullMQ supplies workers, retries, backoff, concurrency and scheduling; the PostgreSQL outbox preserves dispatch intent when Redis is unavailable. Kafka is unnecessary. |
 
 ## 40 Performance design
 
@@ -715,18 +715,18 @@ Calculate quotation totals, margin, and risk in one in-memory pass after one bat
 
 ## 41 Concurrency behavior
 
-| Race                                | Control                                                                  | User-visible result                                         |
-| ----------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| Two reviewers approve same step     | conditional update on PENDING plus unique step/version                   | one succeeds; other gets already actioned and refetches     |
-| Two users reserve same stock        | ordered row locks, revalidation, check constraints                       | later transaction gets remaining stock or backorder         |
-| Customer negotiates while rep edits | quotation `version` and immutable submitted version                      | stale writer gets 409 with latest version                   |
-| Multiple document editors           | Yjs CRDT                                                                 | changes merge; presence may disappear/reconnect             |
-| Payment submitted twice             | unique idempotency key and transaction                                   | same result returned or duplicate rejected                  |
-| Socket disconnect                   | database mutation still succeeds                                         | client refetches on reconnect                               |
-| Reconnect                           | authenticate, rejoin authorized rooms, fetch current versions            | current state restored                                      |
-| Document conflict                   | Yjs state-vector synchronization                                         | merged document; snapshot version advances                  |
-| Duplicate/retried worker job        | deterministic job/idempotency key plus conditional PostgreSQL transition | one result is stored; duplicate returns existing result     |
-| Redis unavailable during dispatch   | PostgreSQL outbox remains pending; producer fails quickly                | committed business action succeeds; async status is delayed |
+| Race | Control | User-visible result |
+|---|---|---|
+| Two reviewers approve same step | conditional update on PENDING plus unique step/version | one succeeds; other gets already actioned and refetches |
+| Two users reserve same stock | ordered row locks, revalidation, check constraints | later transaction gets remaining stock or backorder |
+| Customer negotiates while rep edits | quotation `version` and immutable submitted version | stale writer gets 409 with latest version |
+| Multiple document editors | Yjs CRDT | changes merge; presence may disappear/reconnect |
+| Payment submitted twice | unique idempotency key and transaction | same result returned or duplicate rejected |
+| Socket disconnect | database mutation still succeeds | client refetches on reconnect |
+| Reconnect | authenticate, rejoin authorized rooms, fetch current versions | current state restored |
+| Document conflict | Yjs state-vector synchronization | merged document; snapshot version advances |
+| Duplicate/retried worker job | deterministic job/idempotency key plus conditional PostgreSQL transition | one result is stored; duplicate returns existing result |
+| Redis unavailable during dispatch | PostgreSQL outbox remains pending; producer fails quickly | committed business action succeeds; async status is delayed |
 
 ## 42 Deployment
 
@@ -736,65 +736,65 @@ Environment variables: `DATABASE_URL`, `DIRECT_DATABASE_URL` if migrations requi
 
 ## 43 MVP versus production
 
-| Feature          | 15-hour MVP                                               | Production                                               |
-| ---------------- | --------------------------------------------------------- | -------------------------------------------------------- |
-| Authentication   | Clerk sessions and prebuilt sign-in; metadata role claim  | MFA/SSO and stricter session policy                      |
-| Authorization    | five Clerk roles plus backend PostgreSQL ownership policy | Clerk custom permissions/Organizations and policy review |
-| Database         | Docker PostgreSQL, seed data                              | RDS backups, Multi-AZ, pooling, PITR                     |
-| Worker jobs      | Docker Redis, one BullMQ worker, outbox dispatcher        | managed Redis, autoscaled workers, dashboards and alerts |
-| Realtime         | one Socket.IO process                                     | multi-instance adapter only when needed                  |
-| Email            | Resend through BullMQ/outbox                              | webhooks, tuned retries and templates                    |
-| Report export    | `pdf-lib` PDF and ExcelJS XLSX worker                     | optional Puppeteer renderer for HTML/CSS fidelity        |
-| File storage     | local private folder                                      | S3, presigned URLs, scanning, lifecycle                  |
-| Document editing | one native rich-text format                               | richer schema and conversions                            |
-| Collaboration    | optional Tiptap/Yjs two-tab demo                          | durable Hocuspocus cluster and snapshot policies         |
-| Payment          | manual Record Payment                                     | gateway, webhooks, reconciliation                        |
-| Warehouse        | weighted greedy and locks                                 | richer cost model and optimizer evaluation               |
-| Recommendations  | deterministic seeded co-purchase                          | offline association mining/A-B testing                   |
-| Monitoring       | health route and logs                                     | CloudWatch, Sentry, metrics, alerts                      |
-| Logging          | structured console and audit table                        | centralized redacted logs and retention                  |
-| Scaling          | single instance                                           | horizontal app, connection pooling, CDN, shared adapters |
+| Feature | 15-hour MVP | Production |
+|---|---|---|
+| Authentication | Clerk sessions and prebuilt sign-in; metadata role claim | MFA/SSO and stricter session policy |
+| Authorization | five Clerk roles plus backend PostgreSQL ownership policy | Clerk custom permissions/Organizations and policy review |
+| Database | Docker PostgreSQL, seed data | RDS backups, Multi-AZ, pooling, PITR |
+| Worker jobs | Docker Redis, one BullMQ worker, outbox dispatcher | managed Redis, autoscaled workers, dashboards and alerts |
+| Realtime | one Socket.IO process | multi-instance adapter only when needed |
+| Email | Resend through BullMQ/outbox | webhooks, tuned retries and templates |
+| Report export | `pdf-lib` PDF and ExcelJS XLSX worker | optional Puppeteer renderer for HTML/CSS fidelity |
+| File storage | local private folder | S3, presigned URLs, scanning, lifecycle |
+| Document editing | one native rich-text format | richer schema and conversions |
+| Collaboration | optional Tiptap/Yjs two-tab demo | durable Hocuspocus cluster and snapshot policies |
+| Payment | manual Record Payment | gateway, webhooks, reconciliation |
+| Warehouse | weighted greedy and locks | richer cost model and optimizer evaluation |
+| Recommendations | deterministic seeded co-purchase | offline association mining/A-B testing |
+| Monitoring | health route and logs | CloudWatch, Sentry, metrics, alerts |
+| Logging | structured console and audit table | centralized redacted logs and retention |
+| Scaling | single instance | horizontal app, connection pooling, CDN, shared adapters |
 
 ## 44 Exact 15-hour implementation plan
 
-|  Hour | Priority | Deliverable and exit check                                                                                                                   |
-| ----: | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-|   0-1 | P0       | Scaffold Next.js/TypeScript/Tailwind/shadcn; Docker PostgreSQL and Redis; pin lockfile; health route.                                        |
-|   1-2 | P0       | Prisma schema for Clerk-linked users, catalog, quote, approval, warehouse, invoice, outbox/export request; migrate and seed five demo roles. |
-|   2-3 | P0       | Clerk provider/sign-in/proxy, role session claim, user sync, backend role/resource guards.                                                   |
-|   3-5 | P0       | Quotation builder, pricing, quantity, line/order discount, margin, immutable version.                                                        |
-|   5-6 | P0       | Transparent risk score, explanation panel, automatic approval chain.                                                                         |
-|   6-7 | P0       | Manager/Finance approval actions, state transition guard, audit log.                                                                         |
-|   7-8 | P0       | Weighted greedy warehouse plan, heap utility, row-lock reservation and backorder.                                                            |
-|   8-9 | P0       | One-time invoice plus recurring schedule; manual payment -> PAID transaction.                                                                |
-|  9-10 | P0       | Separate customer portal, counter-discount, new version, automatic re-approval.                                                              |
-| 10-11 | P1       | Socket.IO rooms/events; reconnect refetch; keep app functional without it.                                                                   |
-| 11-12 | P1       | Seeded explainable recommendations and margin/risk recalculation.                                                                            |
-| 12-13 | P1       | BullMQ dispatcher/worker, deal-health rules, Recharts dashboard, queued `pdf-lib` PDF and ExcelJS XLSX exports.                              |
-| 13-14 | P1/P2    | Resend through worker and basic upload; only if green, Tiptap/Yjs two-tab spike behind feature flag.                                         |
-| 14-15 | P0       | Freeze features; integration tests; rehearse demo twice; prepare local/AWS fallback.                                                         |
+| Hour | Priority | Deliverable and exit check |
+|---:|---|---|
+| 0-1 | P0 | Scaffold Next.js/TypeScript/Tailwind/shadcn; Docker PostgreSQL and Redis; pin lockfile; health route. |
+| 1-2 | P0 | Prisma schema for Clerk-linked users, catalog, quote, approval, warehouse, invoice, outbox/export request; migrate and seed five demo roles. |
+| 2-3 | P0 | Clerk provider/sign-in/proxy, role session claim, user sync, backend role/resource guards. |
+| 3-5 | P0 | Quotation builder, pricing, quantity, line/order discount, margin, immutable version. |
+| 5-6 | P0 | Transparent risk score, explanation panel, automatic approval chain. |
+| 6-7 | P0 | Manager/Finance approval actions, state transition guard, audit log. |
+| 7-8 | P0 | Weighted greedy warehouse plan, heap utility, row-lock reservation and backorder. |
+| 8-9 | P0 | One-time invoice plus recurring schedule; manual payment -> PAID transaction. |
+| 9-10 | P0 | Separate customer portal, counter-discount, new version, automatic re-approval. |
+| 10-11 | P1 | Socket.IO rooms/events; reconnect refetch; keep app functional without it. |
+| 11-12 | P1 | Seeded explainable recommendations and margin/risk recalculation. |
+| 12-13 | P1 | BullMQ dispatcher/worker, deal-health rules, Recharts dashboard, queued `pdf-lib` PDF and ExcelJS XLSX exports. |
+| 13-14 | P1/P2 | Resend through worker and basic upload; only if green, Tiptap/Yjs two-tab spike behind feature flag. |
+| 14-15 | P0 | Freeze features; integration tests; rehearse demo twice; prepare local/AWS fallback. |
 
 P3 after hackathon: advanced offline collaboration, enterprise scale, ML, microservices, Kafka, Kubernetes, payment gateway, general Redis caching, and multi-node Socket.IO adapter.
 
 ## 45 Failure and risk analysis
 
-| Risk                         | Probability | Impact   | Mitigation                                                               | Fallback                                                    |
-| ---------------------------- | ----------- | -------- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| AWS deployment failure       | Medium      | High     | deploy early; Docker parity                                              | run local demo with seeded DB                               |
-| PostgreSQL failure           | Low         | Critical | health check, migrations, known Docker image                             | restore seed/backup; stop writes                            |
-| Clerk configuration/sync bug | Medium      | High     | initialize early; central auth helper; seeded accounts and webhook tests | repair sync; never bypass auth                              |
-| Redis/BullMQ unavailable     | Medium      | Medium   | PostgreSQL outbox, short producer timeout, worker reconnect              | business flow continues; run dispatcher when Redis recovers |
-| Duplicate worker execution   | Medium      | Medium   | idempotent processors and unique result keys                             | return existing result; inspect failed job                  |
-| Socket.IO failure            | Medium      | Medium   | post-commit emit only                                                    | REST refetch/poll button                                    |
-| Email failure                | Medium      | Low      | outbox and timeout                                                       | operation succeeds; UI shows failed notification            |
-| Export/conversion failure    | Medium      | Low      | bounded inputs, fixed templates, retries                                 | show failed status; retry XLSX/PDF job                      |
-| Collaboration failure        | High        | Medium   | feature flag and time box                                                | disable collaboration demo                                  |
-| Transaction failure          | Low         | High     | narrow transactions and error handling                                   | rollback and actionable retry                               |
-| Concurrent allocation        | Medium      | High     | row locks and constraints                                                | create backorder/refetch                                    |
-| Duplicate payment            | Medium      | High     | idempotency unique key                                                   | return original result                                      |
-| Recommendation bug           | Medium      | Medium   | pure unit tests and explanation                                          | hide panel; core flow continues                             |
-| Warehouse algorithm bug      | Medium      | High     | deterministic fixture and manual override                                | use validated manual split                                  |
-| Time shortage                | High        | Critical | feature freeze at hour 13                                                | drop P2 then P1 in reverse order                            |
+| Risk | Probability | Impact | Mitigation | Fallback |
+|---|---|---|---|---|
+| AWS deployment failure | Medium | High | deploy early; Docker parity | run local demo with seeded DB |
+| PostgreSQL failure | Low | Critical | health check, migrations, known Docker image | restore seed/backup; stop writes |
+| Clerk configuration/sync bug | Medium | High | initialize early; central auth helper; seeded accounts and webhook tests | repair sync; never bypass auth |
+| Redis/BullMQ unavailable | Medium | Medium | PostgreSQL outbox, short producer timeout, worker reconnect | business flow continues; run dispatcher when Redis recovers |
+| Duplicate worker execution | Medium | Medium | idempotent processors and unique result keys | return existing result; inspect failed job |
+| Socket.IO failure | Medium | Medium | post-commit emit only | REST refetch/poll button |
+| Email failure | Medium | Low | outbox and timeout | operation succeeds; UI shows failed notification |
+| Export/conversion failure | Medium | Low | bounded inputs, fixed templates, retries | show failed status; retry XLSX/PDF job |
+| Collaboration failure | High | Medium | feature flag and time box | disable collaboration demo |
+| Transaction failure | Low | High | narrow transactions and error handling | rollback and actionable retry |
+| Concurrent allocation | Medium | High | row locks and constraints | create backorder/refetch |
+| Duplicate payment | Medium | High | idempotency unique key | return original result |
+| Recommendation bug | Medium | Medium | pure unit tests and explanation | hide panel; core flow continues |
+| Warehouse algorithm bug | Medium | High | deterministic fixture and manual override | use validated manual split |
+| Time shortage | High | Critical | feature freeze at hour 13 | drop P2 then P1 in reverse order |
 
 ## 46 Observability
 
@@ -806,63 +806,63 @@ Unit-test risk components and Gold-customer example, approval band/sequence, war
 
 ## 48 Five-minute demo strategy
 
-|      Time | Judge-visible behavior                                                                                        |
-| --------: | ------------------------------------------------------------------------------------------------------------- |
-| 0:00-0:30 | Login as Sales Rep; show seeded configuration briefly.                                                        |
-| 0:30-1:15 | Build Gold quote with Laptop 12% and Service 18%; show line explanation and blended risk.                     |
-| 1:15-1:45 | Submit; automatic manager route appears in second window through Socket.IO; approve.                          |
-| 1:45-2:10 | Add explainable promoted upsell; total, margin, and risk update.                                              |
-| 2:10-2:45 | Show A/B/C warehouse candidates and chosen weighted plan; reserve stock.                                      |
-| 2:45-3:15 | Show one-time invoice and recurring schedule on same order.                                                   |
-| 3:15-4:00 | Customer portal counters; risk recalculates and quote re-enters approval automatically.                       |
-| 4:00-4:30 | Approve again, confirm, Record Payment, invoice becomes PAID.                                                 |
+| Time | Judge-visible behavior |
+|---:|---|
+| 0:00-0:30 | Login as Sales Rep; show seeded configuration briefly. |
+| 0:30-1:15 | Build Gold quote with Laptop 12% and Service 18%; show line explanation and blended risk. |
+| 1:15-1:45 | Submit; automatic manager route appears in second window through Socket.IO; approve. |
+| 1:45-2:10 | Add explainable promoted upsell; total, margin, and risk update. |
+| 2:10-2:45 | Show A/B/C warehouse candidates and chosen weighted plan; reserve stock. |
+| 2:45-3:15 | Show one-time invoice and recurring schedule on same order. |
+| 3:15-4:00 | Customer portal counters; risk recalculates and quote re-enters approval automatically. |
+| 4:00-4:30 | Approve again, confirm, Record Payment, invoice becomes PAID. |
 | 4:30-5:00 | Show deal-health/report dashboard and realtime status; collaboration only if rehearsed twice without failure. |
 
 ## 49 Architectural decision records
 
-| ADR                             | Context                                                 | Options                                    | Chosen solution and reason                                                                                                                                  | Trade-offs                                                    | MVP impact                                                  | Production impact                                                                |
-| ------------------------------- | ------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| ADR-001 Next.js                 | Fixed full-stack UI/backend stack                       | App Router Node; split SPA/API; Edge       | App Router on Node minimizes deployables and supports required libraries.                                                                                   | Persistent Socket.IO needs custom Node hosting.               | One codebase.                                               | Backend may separate only if scale demands it.                                   |
-| ADR-002 PostgreSQL              | Transactional quote-to-cash data                        | PostgreSQL; document DB                    | PostgreSQL supports constraints, locks, joins and reporting.                                                                                                | Schema migrations required.                                   | Docker database.                                            | AWS RDS, backups, Multi-AZ.                                                      |
-| ADR-003 Clerk auth and RBAC     | Fast, secure authentication plus five roles             | Clerk; custom JWT/password stack; Auth.js  | Clerk removes custom credential/session work; session role claims enable fast gating while PostgreSQL policies enforce resource ownership.                  | External identity dependency and user-sync path.              | Prebuilt sign-in, server claim check, seeded role metadata. | MFA/SSO, Organizations custom permissions, reconciliation.                       |
-| ADR-004 Socket.IO               | Live approval/negotiation/status UX                     | Socket.IO; SSE; polling                    | Socket.IO supplies rooms and two-way updates; REST remains authoritative.                                                                                   | Default arrival is at most once.                              | Single process and refetch.                                 | Shared adapter only if multi-instance.                                           |
-| ADR-005 ORM                     | Type-safe PostgreSQL access under time pressure         | Prisma; Drizzle; TypeORM; raw SQL          | Prisma provides schema, migrations, generated types and transactions familiar to Next.js teams.                                                             | Row locks use parameterized raw SQL; version must be pinned.  | Faster schema/API work.                                     | Pooling and migration discipline.                                                |
-| ADR-006 Email                   | Reliable low-setup notification                         | Resend API; Nodemailer plus SMTP; raw SMTP | Resend HTTP API minimizes transport configuration and improves delivery visibility.                                                                         | External service and domain/API-key setup.                    | Best effort behind outbox.                                  | Webhooks, retries and templates.                                                 |
-| ADR-007 Modular monolith        | 15-hour delivery with many domains                      | Modular monolith; microservices            | One deployable with code-level modules minimizes integration failures.                                                                                      | Modules cannot scale independently.                           | Essential simplification.                                   | Extract only measured bottlenecks.                                               |
-| ADR-008 Warehouse algorithm     | Explainable multi-objective allocation                  | Weighted greedy; DP; ILP; brute force      | Weighted greedy plus direct-plan comparison is fast, transparent and sufficient for small W.                                                                | May miss a global optimum under complex future constraints.   | Medium-effort judge-visible algorithm.                      | Benchmark against ILP later.                                                     |
-| ADR-009 Priority queue          | Need honest algorithmic value                           | Binary heap; repeated sorting; DB queue    | Heap only where priorities change or top-K is large; otherwise sort/SQL.                                                                                    | Two implementations to test.                                  | Small reusable utility.                                     | Specialized indexes/queues if measured.                                          |
-| ADR-010 Recommendations         | Explainable co-purchase suggestions                     | Weighted score; association rules; CF; LLM | Weighted deterministic score works with seed data and exposes reasons.                                                                                      | Quality depends on weights/history.                           | Reliable top-5 panel.                                       | Offline association mining and experiments.                                      |
-| ADR-011 File storage            | Store binary documents safely                           | PostgreSQL blobs; local files; S3          | Local private files for local demo; S3 for production.                                                                                                      | Local files are not durable across instances.                 | Zero cloud dependency.                                      | Private S3, lifecycle and scanning.                                              |
-| ADR-012 Collaboration           | Desired Google Docs-like editing                        | Custom OT; custom CRDT; Yjs/Hocuspocus     | Mature Yjs with Tiptap/Hocuspocus avoids implementing conflict resolution.                                                                                  | Separate WebSocket protocol and integration risk.             | P2 feature flag.                                            | Durable clustered collaboration.                                                 |
-| ADR-013 Redis limited to BullMQ | Reliable async work without making Redis authoritative  | BullMQ/Redis; database polling; Kafka      | BullMQ supplies worker concurrency, retries and scheduling; PostgreSQL outbox covers Redis outages. Redis is not used as business storage or general cache. | One additional service and operational dependency.            | Docker Redis plus one worker.                               | Managed Redis, worker autoscaling, optional separate Socket.IO adapter decision. |
-| ADR-016 Report export           | Export PDF/XLS buttons must produce the filtered report | `pdf-lib`; Puppeteer; CSV-only             | `pdf-lib` generates the bounded MVP PDF without Chromium; ExcelJS generates styled XLSX from the same scoped DTO.                                           | PDF template is code-driven rather than pixel-identical HTML. | Reliable two-button export through BullMQ.                  | Optional Puppeteer renderer for HTML/CSS/chart fidelity.                         |
-| ADR-014 No microservices        | Many modules but one small team                         | Monolith; microservices                    | Keep modules in one process and database transaction boundary.                                                                                              | Discipline required to avoid coupling.                        | Enables completion.                                         | Selective extraction remains possible.                                           |
-| ADR-015 No payment gateway      | PS requires recording, not processing, payment          | Manual record; Stripe/other gateway        | Manual idempotent Payment proves invoice status logic without external financial risk.                                                                      | No settlement or webhook behavior.                            | Reliable PAID demo.                                         | Add gateway, webhooks and reconciliation.                                        |
+| ADR | Context | Options | Chosen solution and reason | Trade-offs | MVP impact | Production impact |
+|---|---|---|---|---|---|---|
+| ADR-001 Next.js | Fixed full-stack UI/backend stack | App Router Node; split SPA/API; Edge | App Router on Node minimizes deployables and supports required libraries. | Persistent Socket.IO needs custom Node hosting. | One codebase. | Backend may separate only if scale demands it. |
+| ADR-002 PostgreSQL | Transactional quote-to-cash data | PostgreSQL; document DB | PostgreSQL supports constraints, locks, joins and reporting. | Schema migrations required. | Docker database. | AWS RDS, backups, Multi-AZ. |
+| ADR-003 Clerk auth and RBAC | Fast, secure authentication plus five roles | Clerk; custom JWT/password stack; Auth.js | Clerk removes custom credential/session work; session role claims enable fast gating while PostgreSQL policies enforce resource ownership. | External identity dependency and user-sync path. | Prebuilt sign-in, server claim check, seeded role metadata. | MFA/SSO, Organizations custom permissions, reconciliation. |
+| ADR-004 Socket.IO | Live approval/negotiation/status UX | Socket.IO; SSE; polling | Socket.IO supplies rooms and two-way updates; REST remains authoritative. | Default arrival is at most once. | Single process and refetch. | Shared adapter only if multi-instance. |
+| ADR-005 ORM | Type-safe PostgreSQL access under time pressure | Prisma; Drizzle; TypeORM; raw SQL | Prisma provides schema, migrations, generated types and transactions familiar to Next.js teams. | Row locks use parameterized raw SQL; version must be pinned. | Faster schema/API work. | Pooling and migration discipline. |
+| ADR-006 Email | Reliable low-setup notification | Resend API; Nodemailer plus SMTP; raw SMTP | Resend HTTP API minimizes transport configuration and improves delivery visibility. | External service and domain/API-key setup. | Best effort behind outbox. | Webhooks, retries and templates. |
+| ADR-007 Modular monolith | 15-hour delivery with many domains | Modular monolith; microservices | One deployable with code-level modules minimizes integration failures. | Modules cannot scale independently. | Essential simplification. | Extract only measured bottlenecks. |
+| ADR-008 Warehouse algorithm | Explainable multi-objective allocation | Weighted greedy; DP; ILP; brute force | Weighted greedy plus direct-plan comparison is fast, transparent and sufficient for small W. | May miss a global optimum under complex future constraints. | Medium-effort judge-visible algorithm. | Benchmark against ILP later. |
+| ADR-009 Priority queue | Need honest algorithmic value | Binary heap; repeated sorting; DB queue | Heap only where priorities change or top-K is large; otherwise sort/SQL. | Two implementations to test. | Small reusable utility. | Specialized indexes/queues if measured. |
+| ADR-010 Recommendations | Explainable co-purchase suggestions | Weighted score; association rules; CF; LLM | Weighted deterministic score works with seed data and exposes reasons. | Quality depends on weights/history. | Reliable top-5 panel. | Offline association mining and experiments. |
+| ADR-011 File storage | Store binary documents safely | PostgreSQL blobs; local files; S3 | Local private files for local demo; S3 for production. | Local files are not durable across instances. | Zero cloud dependency. | Private S3, lifecycle and scanning. |
+| ADR-012 Collaboration | Desired Google Docs-like editing | Custom OT; custom CRDT; Yjs/Hocuspocus | Mature Yjs with Tiptap/Hocuspocus avoids implementing conflict resolution. | Separate WebSocket protocol and integration risk. | P2 feature flag. | Durable clustered collaboration. |
+| ADR-013 Redis limited to BullMQ | Reliable async work without making Redis authoritative | BullMQ/Redis; database polling; Kafka | BullMQ supplies worker concurrency, retries and scheduling; PostgreSQL outbox covers Redis outages. Redis is not used as business storage or general cache. | One additional service and operational dependency. | Docker Redis plus one worker. | Managed Redis, worker autoscaling, optional separate Socket.IO adapter decision. |
+| ADR-016 Report export | Export PDF/XLS buttons must produce the filtered report | `pdf-lib`; Puppeteer; CSV-only | `pdf-lib` generates the bounded MVP PDF without Chromium; ExcelJS generates styled XLSX from the same scoped DTO. | PDF template is code-driven rather than pixel-identical HTML. | Reliable two-button export through BullMQ. | Optional Puppeteer renderer for HTML/CSS/chart fidelity. |
+| ADR-014 No microservices | Many modules but one small team | Monolith; microservices | Keep modules in one process and database transaction boundary. | Discipline required to avoid coupling. | Enables completion. | Selective extraction remains possible. |
+| ADR-015 No payment gateway | PS requires recording, not processing, payment | Manual record; Stripe/other gateway | Manual idempotent Payment proves invoice status logic without external financial risk. | No settlement or webhook behavior. | Reliable PAID demo. | Add gateway, webhooks and reconciliation. |
 
 ## 50 Final technology evaluation
 
-| Category        | Technology                              | Why                                                                           | Alternative and rejection                                         | Scope    |
-| --------------- | --------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------- |
-| Frontend        | Next.js/React                           | Fixed, integrated routing/rendering                                           | Separate SPA adds deployment/API work                             | MVP      |
-| Backend         | Next.js Node Route Handlers             | Fixed and compatible with libraries                                           | Edge lacks needed Node APIs                                       | MVP      |
-| Language        | TypeScript                              | Shared contracts and pure rules                                               | Mixed language slows team                                         | MVP      |
-| Auth            | Clerk Next.js SDK                       | Managed identity/session UI and async server helpers                          | custom JWT/password/session stack adds security and delivery risk | MVP/Prod |
-| Authorization   | Clerk role claim plus PostgreSQL policy | Fast RBAC gating with authoritative resource ownership                        | frontend-only role checks are insecure                            | MVP/Prod |
-| Database        | PostgreSQL                              | Required transactions/constraints                                             | Document DB weaker fit                                            | MVP/Prod |
-| ORM             | Prisma                                  | Fast schema, migrations, typed queries                                        | Raw SQL slower; Drizzle also viable but less team assumption      | MVP      |
-| Realtime        | Socket.IO                               | Required rooms/reconnect UX                                                   | SSE is one-way                                                    | MVP      |
-| Email           | Resend HTTP API                         | Low setup and delivery visibility                                             | raw SMTP has more config                                          | P1       |
-| File storage    | Local then S3                           | Lowest MVP risk; durable production                                           | DB blobs rejected                                                 | MVP/Prod |
-| Worker jobs     | BullMQ + Redis + PostgreSQL outbox      | retries, backoff and isolated worker execution without losing dispatch intent | in-request jobs are fragile; Kafka is excessive                   | P1/Prod  |
-| Conversion      | ExcelJS/CSV/Sharp/PDF libraries         | Server-side and focused                                                       | universal converter is unrealistic                                | P1/P2    |
-| Document editor | Tiptap                                  | React-ready rich text                                                         | contenteditable alone is brittle                                  | P2       |
-| Collaboration   | Yjs/Hocuspocus                          | Mature CRDT and persistence hooks                                             | custom OT/CRDT prohibited                                         | P2/Prod  |
-| Algorithms      | Pure TS weighted scores and binary heap | Explainable and testable                                                      | ML/ILP excessive                                                  | MVP      |
-| Charts          | Recharts                                | Fixed and quick                                                               | custom SVG wastes time                                            | P1       |
-| PDF report      | `pdf-lib` in BullMQ worker              | deterministic fixed template with no Chromium runtime                         | Puppeteer has better HTML fidelity but more deployment weight     | P1       |
-| XLS report      | ExcelJS in BullMQ worker                | reads/writes XLSX with worksheets, formats and styles                         | CSV-only misses the Export XLS requirement                        | P1       |
-| Deployment      | Docker on one AWS compute node plus RDS | Supports persistent Socket.IO                                                 | Lambda complicates WebSockets                                     | MVP/Prod |
-| Monitoring      | logs/health then CloudWatch/Sentry      | proportional to stage                                                         | full stack is not MVP-critical                                    | Prod     |
+| Category | Technology | Why | Alternative and rejection | Scope |
+|---|---|---|---|---|
+| Frontend | Next.js/React | Fixed, integrated routing/rendering | Separate SPA adds deployment/API work | MVP |
+| Backend | Next.js Node Route Handlers | Fixed and compatible with libraries | Edge lacks needed Node APIs | MVP |
+| Language | TypeScript | Shared contracts and pure rules | Mixed language slows team | MVP |
+| Auth | Clerk Next.js SDK | Managed identity/session UI and async server helpers | custom JWT/password/session stack adds security and delivery risk | MVP/Prod |
+| Authorization | Clerk role claim plus PostgreSQL policy | Fast RBAC gating with authoritative resource ownership | frontend-only role checks are insecure | MVP/Prod |
+| Database | PostgreSQL | Required transactions/constraints | Document DB weaker fit | MVP/Prod |
+| ORM | Prisma | Fast schema, migrations, typed queries | Raw SQL slower; Drizzle also viable but less team assumption | MVP |
+| Realtime | Socket.IO | Required rooms/reconnect UX | SSE is one-way | MVP |
+| Email | Resend HTTP API | Low setup and delivery visibility | raw SMTP has more config | P1 |
+| File storage | Local then S3 | Lowest MVP risk; durable production | DB blobs rejected | MVP/Prod |
+| Worker jobs | BullMQ + Redis + PostgreSQL outbox | retries, backoff and isolated worker execution without losing dispatch intent | in-request jobs are fragile; Kafka is excessive | P1/Prod |
+| Conversion | ExcelJS/CSV/Sharp/PDF libraries | Server-side and focused | universal converter is unrealistic | P1/P2 |
+| Document editor | Tiptap | React-ready rich text | contenteditable alone is brittle | P2 |
+| Collaboration | Yjs/Hocuspocus | Mature CRDT and persistence hooks | custom OT/CRDT prohibited | P2/Prod |
+| Algorithms | Pure TS weighted scores and binary heap | Explainable and testable | ML/ILP excessive | MVP |
+| Charts | Recharts | Fixed and quick | custom SVG wastes time | P1 |
+| PDF report | `pdf-lib` in BullMQ worker | deterministic fixed template with no Chromium runtime | Puppeteer has better HTML fidelity but more deployment weight | P1 |
+| XLS report | ExcelJS in BullMQ worker | reads/writes XLSX with worksheets, formats and styles | CSV-only misses the Export XLS requirement | P1 |
+| Deployment | Docker on one AWS compute node plus RDS | Supports persistent Socket.IO | Lambda complicates WebSockets | MVP/Prod |
+| Monitoring | logs/health then CloudWatch/Sentry | proportional to stage | full stack is not MVP-critical | Prod |
 
 ## 51 Final architecture diagram
 
@@ -904,21 +904,21 @@ flowchart TB
 
 ## 52 Developer quick reference
 
-| Item                 | Build choice                                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Frontend and backend | Next.js App Router plus TypeScript, Node runtime                                                             |
-| UI and forms         | Tailwind, shadcn/ui, React Hook Form, Zod                                                                    |
-| Auth                 | Clerk Next.js sessions; server-side role claim and PostgreSQL resource checks                                |
-| Database             | PostgreSQL; Docker local; AWS RDS production                                                                 |
-| ORM                  | Prisma; migrations plus interactive transactions                                                             |
-| Realtime             | Socket.IO for post-commit invalidation/events; REST refetch on reconnect                                     |
-| Email                | Resend HTTP API behind adapter; database outbox; failure is non-transactional                                |
-| Worker jobs          | BullMQ/Redis for email, exports, conversions and scheduled health; PostgreSQL outbox for dispatch durability |
-| Reports              | Recharts UI; `pdf-lib` PDF and ExcelJS XLSX from the same scoped filter DTO                                  |
-| Algorithms           | Weighted risk, weighted greedy warehouse plan, binary heap where useful, weighted recommendations            |
-| Documents            | Private local storage MVP, S3 production; focused conversion libraries                                       |
-| Collaboration        | Optional Tiptap + Yjs + Hocuspocus, same process, feature flagged                                            |
-| Absolute invariants  | PostgreSQL authoritative; audit approvals; lock stock; idempotent payment; customer isolation                |
+| Item | Build choice |
+|---|---|
+| Frontend and backend | Next.js App Router plus TypeScript, Node runtime |
+| UI and forms | Tailwind, shadcn/ui, React Hook Form, Zod |
+| Auth | Clerk Next.js sessions; server-side role claim and PostgreSQL resource checks |
+| Database | PostgreSQL; Docker local; AWS RDS production |
+| ORM | Prisma; migrations plus interactive transactions |
+| Realtime | Socket.IO for post-commit invalidation/events; REST refetch on reconnect |
+| Email | Resend HTTP API behind adapter; database outbox; failure is non-transactional |
+| Worker jobs | BullMQ/Redis for email, exports, conversions and scheduled health; PostgreSQL outbox for dispatch durability |
+| Reports | Recharts UI; `pdf-lib` PDF and ExcelJS XLSX from the same scoped filter DTO |
+| Algorithms | Weighted risk, weighted greedy warehouse plan, binary heap where useful, weighted recommendations |
+| Documents | Private local storage MVP, S3 production; focused conversion libraries |
+| Collaboration | Optional Tiptap + Yjs + Hocuspocus, same process, feature flagged |
+| Absolute invariants | PostgreSQL authoritative; audit approvals; lock stock; idempotent payment; customer isolation |
 
 ## 53 Non-negotiable architecture rules
 
