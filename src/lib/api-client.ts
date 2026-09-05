@@ -1,9 +1,23 @@
 /**
+<<<<<<< HEAD
+ * Client-side fetch helper for this codebase's own Route Handlers.
+ *
+ * Every real route (see lib/route-handler.ts's `api()`) responds with `{data, requestId}` on
+ * success and `{error: {code, message, details, requestId}}` on failure — no top-level
+ * `success` flag. (lib/api-response.ts defines an older `{success, data}` shape, but nothing
+ * except the unused src/app/api/example route ever returns it; this client used to assume that
+ * shape, which meant every real call fell through to "Unexpected response shape from the
+ * server." — this now matches what the API actually sends, and still tolerates the old shape
+ * in case anything is ever written against api-response.ts.) Also tolerates a non-JSON response
+ * (e.g. Next's own 404 page) for endpoints a teammate hasn't built yet, so the UI can show a
+ * clear message instead of a crash.
+=======
  * Client-side fetch helper for this codebase's own Route Handlers, which respond with the
  * Supports both the current {data, requestId} route-handler envelope and the
  * {success, data} / {success:false, error} envelope from lib/api-response.ts.
  * Also tolerates a non-JSON response (e.g. Next's own 404 page) for endpoints a teammate
  * hasn't built yet, so the UI can show a clear message instead of a crash.
+>>>>>>> f65f9fc423dec4447565cf0aaf5626ae20ae24f1
  */
 export type ApiEnvelopeError = {
   code: string;
@@ -38,6 +52,11 @@ export async function apiRequest<T>(input: string, init?: RequestInit): Promise<
     });
   }
 
+  // route-handler.ts's api() sends a bodyless 204 for successful deletes — nothing to parse.
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   let body: unknown;
   try {
     body = await response.json();
@@ -52,6 +71,28 @@ export async function apiRequest<T>(input: string, init?: RequestInit): Promise<
   }
 
   if (body && typeof body === "object") {
+<<<<<<< HEAD
+    // Real shape (lib/route-handler.ts): {data, requestId} on success, {error: {...}} on failure.
+    if ("error" in body) {
+      const envelope = body as { error?: ApiEnvelopeError };
+      throw new ApiClientError(
+        envelope.error ?? { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+      );
+    }
+    if ("data" in body) {
+      return (body as { data: T }).data;
+    }
+    // Legacy shape (lib/api-response.ts): {success, data} / {success: false, error}.
+    if ("success" in body) {
+      const envelope = body as { success: boolean; data?: T; error?: ApiEnvelopeError };
+      if (envelope.success) {
+        return envelope.data as T;
+      }
+      throw new ApiClientError(
+        envelope.error ?? { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+      );
+    }
+=======
     const envelope = body as {
       success?: boolean;
       data?: T;
@@ -70,6 +111,7 @@ export async function apiRequest<T>(input: string, init?: RequestInit): Promise<
     if (envelope.error) {
       throw new ApiClientError(envelope.error);
     }
+>>>>>>> f65f9fc423dec4447565cf0aaf5626ae20ae24f1
   }
 
   throw new ApiClientError({
