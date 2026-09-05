@@ -1,85 +1,417 @@
-import Image from "next/image";
+"use client";
 
-export const dynamic = "force-dynamic";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Layers,
+  Package,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 
-export default function Home() {
+import { DealFlowNav } from "@/components/dealflow-nav";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+interface PipelineMetric {
+  title: string;
+  value: string;
+  sub: string;
+  icon: React.ComponentType<{ className?: string }>;
+  trend: string;
+  href: string;
+}
+
+export default function HomePage() {
+  const [productCount, setProductCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Attempt to fetch current product count from active catalog API
+    fetch("/api/products")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setProductCount(data.length);
+        }
+      })
+      .catch(() => {
+        // Fallback silently if unseeded
+      });
+  }, []);
+
+  const metrics: PipelineMetric[] = [
+    {
+      title: "Open Quotations",
+      value: "18",
+      sub: "$482,500 total pipeline",
+      icon: FileText,
+      trend: "+12% this week",
+      href: "/quotations",
+    },
+    {
+      title: "Pending Approvals",
+      value: "4",
+      sub: "Requires Manager / Finance review",
+      icon: Clock,
+      trend: "2 high priority",
+      href: "/approvals",
+    },
+    {
+      title: "At-Risk Deals",
+      value: "3",
+      sub: "Flagged by Deal Health Engine",
+      icon: AlertTriangle,
+      trend: "Discount & delivery flags",
+      href: "/deal-health",
+    },
+    {
+      title: "Active Catalog",
+      value: productCount !== null ? String(productCount) : "24",
+      sub: "Products & tiered price lists",
+      icon: Package,
+      trend: "Master catalog ready",
+      href: "/products",
+    },
+  ];
+
+  const atRiskDeals = [
+    {
+      id: "Q-1049",
+      customer: "Acme Industrial Corp",
+      amount: "$124,000",
+      discount: "28.5%",
+      riskReason: "Discount exceeds tier ceiling (20% max)",
+      severity: "high",
+      status: "PENDING_APPROVAL",
+    },
+    {
+      id: "Q-1047",
+      customer: "Cyberdyne Systems",
+      amount: "$88,500",
+      discount: "18.0%",
+      riskReason: "Shipment delivery slippage > 14 days",
+      severity: "medium",
+      status: "APPROVED",
+    },
+    {
+      id: "Q-1044",
+      customer: "Wayne Enterprises",
+      amount: "$215,000",
+      discount: "14.2%",
+      riskReason: "Quotation idle for 19 days without response",
+      severity: "medium",
+      status: "NEGOTIATION",
+    },
+    {
+      id: "Q-1041",
+      customer: "Stark Global Logistics",
+      amount: "$64,200",
+      discount: "9.0%",
+      riskReason: "Credit limit review required by Finance",
+      severity: "low",
+      status: "PENDING_APPROVAL",
+    },
+  ];
+
+  const recentActivity = [
+    {
+      id: "ACT-01",
+      time: "10 mins ago",
+      actor: "Sarah Jenkins (Sales Manager)",
+      action: "Approved 15% discount for Quotation Q-1048 (Apex Telecom)",
+      type: "approval",
+    },
+    {
+      id: "ACT-02",
+      time: "42 mins ago",
+      actor: "Marcus Vance (Sales Rep)",
+      action: "Submitted Quotation Q-1049 ($124k) for Finance escalation",
+      type: "quote",
+    },
+    {
+      id: "ACT-03",
+      time: "2 hours ago",
+      actor: "System (Risk Engine)",
+      action: "Flagged Q-1047 for warehouse lead-time anomaly",
+      type: "risk",
+    },
+    {
+      id: "ACT-04",
+      time: "4 hours ago",
+      actor: "Elena Rostova (Finance Ops)",
+      action: "Configured Enterprise Tier discount ceilings in Screen 18",
+      type: "config",
+    },
+  ];
+
+  const workflowStages = [
+    { num: "01", name: "Catalog & Pricing", desc: "Master products, price lists & customer tiers" },
+    { num: "02", name: "Quotation Builder", desc: "Line discounts with live ceiling enforcement" },
+    { num: "03", name: "Approval Chain", desc: "Risk-based routing to Manager & Finance" },
+    { num: "04", name: "Customer Portal", desc: "Counter-proposals, chat & digital signature" },
+    { num: "05", name: "Billing & Order", desc: "One-time dispatch, subscriptions & invoices" },
+  ];
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-secondary/30 pb-16">
+      <DealFlowNav />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
+        {/* Welcome & Command Bar */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                Sales Operations Hub
+              </span>
+              <span className="text-xs text-muted-foreground">Screen 2 • DealFlow360</span>
+            </div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Commercial Operations Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Real-time quote-to-cash pipeline, automated approval governance, and deal health telemetry.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/products"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <Package className="mr-1.5 h-4 w-4" />
+              Product Catalog
+            </Link>
+            <Link
+              href="/approvals"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ShieldCheck className="mr-1.5 h-4 w-4" />
+              Approval Queue
+            </Link>
+            <Link
+              href="/products/new"
+              className={buttonVariants({ size: "sm" })}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              New Product
+            </Link>
+          </div>
+        </div>
+
+        {/* Top KPI Metrics Tiles */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((m) => {
+            const Icon = m.icon;
+            return (
+              <Card key={m.title} className="transition-all hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {m.title}
+                  </CardTitle>
+                  <div className="rounded-md bg-primary/10 p-2 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{m.value}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">{m.sub}</p>
+                  <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                      {m.trend}
+                    </span>
+                    <Link
+                      href={m.href}
+                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                    >
+                      View
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* End-to-End Lifecycle Stages */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">
+                  Quote-to-Cash End-to-End Lifecycle
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Unified governance flow connecting pricing, discount risk scoring, approvals, and fulfillment.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                P0 Architecture
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {workflowStages.map((stage) => (
+                <div
+                  key={stage.num}
+                  className="relative rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">
+                      {stage.num}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {stage.name}
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {stage.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main 2-Column Split: At-Risk Deals & Recent Activity */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left 2 Cols: At-Risk Deals & Priority Approvals */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base font-semibold">
+                  At-Risk Deals & Escalation Queue
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Deals requiring action due to discount boundary violations or delivery slippage.
+                </CardDescription>
+              </div>
+              <Link href="/deal-health" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                View All Flags
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Quote</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Risk Signal</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {atRiskDeals.map((deal) => (
+                    <TableRow key={deal.id}>
+                      <TableCell className="font-mono text-xs font-bold text-primary">
+                        {deal.id}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium text-foreground">
+                        {deal.customer}
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold">{deal.amount}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge
+                          variant={deal.severity === "high" ? "destructive" : "secondary"}
+                          className="text-[10px]"
+                        >
+                          {deal.discount}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                        {deal.riskReason}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link
+                          href="/quotations"
+                          className={buttonVariants({ variant: "outline", size: "xs" })}
+                        >
+                          Review
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Right Col: Live Activity Stream */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">Audit & Activity Log</CardTitle>
+                <Badge variant="outline" className="text-[10px]">
+                  Live Feed
+                </Badge>
+              </div>
+              <CardDescription className="text-xs">
+                Immutable event stream for compliance (Screen 18).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.map((act) => (
+                  <div key={act.id} className="flex gap-3 text-xs">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      {act.type === "approval" ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      ) : act.type === "risk" ? (
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                      ) : (
+                        <Layers className="h-3.5 w-3.5 text-primary" />
+                      )}
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="font-medium text-foreground leading-snug">{act.action}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>{act.actor}</span>
+                        <span>•</span>
+                        <span>{act.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-border">
+                <Link
+                  href="/products"
+                  className={buttonVariants({ variant: "outline", size: "sm", className: "w-full text-xs justify-center" })}
+                >
+                  Browse Product Catalog
+                  <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
