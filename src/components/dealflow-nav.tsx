@@ -9,11 +9,15 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/" },
+  { label: "Customers", href: "/customers" },
   { label: "Products", href: "/products" },
+  { label: "Price Lists", href: "/price-lists" },
+  { label: "Discount Rules", href: "/discount-rules" },
   { label: "Warehouses", href: "/warehouses" },
   { label: "Quotations", href: "/quotations" },
   { label: "Approvals", href: "/approvals" },
   { label: "Fulfillment", href: "/fulfillment" },
+  { label: "Sub Plans", href: "/subscription-plans" },
   { label: "Subscriptions", href: "/subscriptions" },
   { label: "Invoices", href: "/invoices" },
   { label: "Deal Health", href: "/deal-health" },
