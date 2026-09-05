@@ -38,3 +38,34 @@ export const DEFAULT_PARTIAL_REFUND_RULE = {
   minimumDaysForRefund: 1,
   description: "Pro-rata credit note or refund calculated on unused subscription cycle duration",
 } as const;
+
+/**
+ * Calculates cycle end date given a start date and cadence.
+ * Cycle ends exactly at the start of the next cycle.
+ */
+export function calculateCycleEndDate(startDate: Date, cadence: SubscriptionCadence): Date {
+  const end = new Date(startDate.getTime());
+  switch (cadence) {
+    case "MONTHLY":
+      end.setUTCMonth(end.getUTCMonth() + 1);
+      break;
+    case "QUARTERLY":
+      end.setUTCMonth(end.getUTCMonth() + 3);
+      break;
+    case "YEARLY":
+      end.setUTCFullYear(end.getUTCFullYear() + 1);
+      break;
+  }
+  return end;
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Calculates whole or fractional days between two dates.
+ * Clamped to non-negative if end is after start.
+ */
+export function calculateDaysBetween(startDate: Date, endDate: Date): number {
+  const diffMs = endDate.getTime() - startDate.getTime();
+  return Math.max(0, Math.round(diffMs / MS_PER_DAY));
+}
