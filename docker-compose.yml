@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: dealflow360
       POSTGRES_DB: dealflow360
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

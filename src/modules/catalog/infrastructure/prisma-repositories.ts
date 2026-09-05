@@ -35,6 +35,7 @@ function productDto(product: ProductRecord): ProductDto {
     sku: product.sku,
     name: product.name,
     price: product.price.toFixed(2),
+    costPrice: product.costPrice.toFixed(2),
     unit: product.unit,
     taxPct: product.taxPct.toString(),
     description: product.description,
@@ -62,7 +63,10 @@ function translateWriteError(error: unknown): never {
       });
     }
     if (error.code === "P2003") {
-      throw new ServiceError("CONFIGURATION_CONFLICT", "The record is referenced by other configuration");
+      throw new ServiceError(
+        "CONFIGURATION_CONFLICT",
+        "The record is referenced by other configuration",
+      );
     }
     if (error.code === "P2025") {
       throw new ServiceError("NOT_FOUND", "The requested catalog record was not found");
@@ -95,7 +99,8 @@ export class PrismaCategoryRepository implements CategoryRepository {
     try {
       return categoryDto(await this.db.productCategory.update({ where: { id }, data: input }));
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return null;
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+        return null;
       translateWriteError(error);
     }
   }
@@ -105,7 +110,8 @@ export class PrismaCategoryRepository implements CategoryRepository {
       await this.db.productCategory.delete({ where: { id } });
       return true;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return false;
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+        return false;
       translateWriteError(error);
     }
   }
@@ -137,7 +143,9 @@ export class PrismaProductRepository implements ProductRepository {
             ...product,
             description: product.description ?? null,
             recurringCycle: product.recurringCycle ?? null,
-            variants: { create: variants.map((variant) => ({ ...variant, sku: variant.sku ?? null })) },
+            variants: {
+              create: variants.map((variant) => ({ ...variant, sku: variant.sku ?? null })),
+            },
           },
           include: productInclude,
         }),
@@ -160,7 +168,11 @@ export class PrismaProductRepository implements ProductRepository {
             ...product,
             ...(product.isSubscription === false ? { recurringCycle: null } : {}),
             ...(variants
-              ? { variants: { create: variants.map((variant) => ({ ...variant, sku: variant.sku ?? null })) } }
+              ? {
+                  variants: {
+                    create: variants.map((variant) => ({ ...variant, sku: variant.sku ?? null })),
+                  },
+                }
               : {}),
           },
           include: productInclude,
@@ -168,7 +180,8 @@ export class PrismaProductRepository implements ProductRepository {
         return productDto(updated);
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return null;
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+        return null;
       translateWriteError(error);
     }
   }
@@ -179,7 +192,8 @@ export class PrismaProductRepository implements ProductRepository {
       await this.db.product.update({ where: { id }, data: { isActive: false } });
       return true;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return false;
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+        return false;
       translateWriteError(error);
     }
   }

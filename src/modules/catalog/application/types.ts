@@ -12,6 +12,8 @@ export type ProductDto = {
   sku: string;
   name: string;
   price: string;
+  /** Cost basis for T6.4's margin calculation; never rendered on customer-facing surfaces. */
+  costPrice: string;
   unit: string;
   taxPct: string;
   description: string | null;
