@@ -7,7 +7,20 @@ import type {
   QuotationListQuery,
   UpdateQuotationDiscountsInput,
 } from "../schemas/quotation";
-import type { QuotationDto } from "./types";
+import type { QuotationApprovalStepDto, QuotationDto, QuotationRiskDto } from "./types";
+
+/** What T7.2's SubmitQuotationUseCase asks the repository to persist, atomically, in one
+ * transaction: the frozen version snapshot, the risk evaluation it produced, the approval
+ * chain it requires (if any), and the resulting Quotation status/version bump. */
+export type SubmitQuotationPersistInput = {
+  expectedVersion: number;
+  /** Immutable snapshot of the quotation at submit time (TAD SS9 QuotationVersion). */
+  payload: unknown;
+  payloadHash: string;
+  risk: QuotationRiskDto;
+  approvalSteps: QuotationApprovalStepDto[];
+  finalStatus: "APPROVED" | "PENDING_APPROVAL";
+};
 
 export interface QuotationRepository {
   list(query: QuotationListQuery): Promise<QuotationDto[]>;
@@ -20,4 +33,5 @@ export interface QuotationRepository {
     input: UpdateQuotationDiscountsInput,
     actor: Actor,
   ): Promise<QuotationDto>;
+  submit(id: string, input: SubmitQuotationPersistInput, actor: Actor): Promise<QuotationDto>;
 }

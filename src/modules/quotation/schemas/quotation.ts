@@ -87,8 +87,13 @@ export const updateQuotationDiscountsSchema = z
     }
   });
 
+export const submitQuotationSchema = z.object({
+  expectedVersion: positiveInt,
+});
+
 export type CreateQuotationInput = z.infer<typeof createQuotationSchema>;
 export type QuotationListQuery = z.infer<typeof quotationListQuerySchema>;
 export type AddQuotationLineInput = z.infer<typeof addQuotationLineSchema>;
 export type PatchQuotationInput = z.infer<typeof patchQuotationSchema>;
 export type UpdateQuotationDiscountsInput = z.infer<typeof updateQuotationDiscountsSchema>;
+export type SubmitQuotationInput = z.infer<typeof submitQuotationSchema>;

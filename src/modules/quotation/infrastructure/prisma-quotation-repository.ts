@@ -16,7 +16,7 @@ import type {
   QuotationListQuery,
   UpdateQuotationDiscountsInput,
 } from "../schemas/quotation";
-import type { QuotationRepository } from "../application/ports";
+import type { QuotationRepository, SubmitQuotationPersistInput } from "../application/ports";
 import type { QuotationDto } from "../application/types";
 
 const quotationInclude = {
@@ -25,7 +25,7 @@ const quotationInclude = {
   priceList: { select: { id: true, name: true, currency: true } },
   lines: {
     include: {
-      product: { select: { id: true, name: true, sku: true, costPrice: true } },
+      product: { select: { id: true, name: true, sku: true, costPrice: true, categoryId: true } },
       variant: { select: { id: true, attribute: true, value: true } },
     },
     orderBy: { createdAt: "asc" },
@@ -80,7 +80,12 @@ function quotationDto(record: QuotationRecord): QuotationDto {
     version: record.version,
     lines: lineMargins.map(({ line, margin }) => ({
       id: line.id,
-      product: { id: line.product.id, name: line.product.name, sku: line.product.sku },
+      product: {
+        id: line.product.id,
+        name: line.product.name,
+        sku: line.product.sku,
+        categoryId: line.product.categoryId,
+      },
       variant: line.variant,
       quantity: line.quantity,
       unitPrice: line.unitPrice.toFixed(2),
@@ -369,6 +374,77 @@ export class PrismaQuotationRepository implements QuotationRepository {
           action: "UPDATE_DISCOUNTS",
           before,
           after,
+        });
+
+        const updated = await tx.quotation.findUniqueOrThrow({
+          where: { id },
+          include: quotationInclude,
+        });
+        return quotationDto(updated);
+      });
+    } catch (error) {
+      translateWriteError(error);
+    }
+  }
+
+  async submit(id: string, input: SubmitQuotationPersistInput, actor: Actor) {
+    try {
+      return await this.db.$transaction(async (tx) => {
+        // TAD SS9: QuotationVersion freezes commercial terms at submit time. versionNo is
+        // derived from how many versions already exist rather than a separate counter column —
+        // a quotation can only be submitted from Draft (checked by the use-case), so this is
+        // always the first version today; the count-based approach still holds once T12.4's
+        // negotiation re-approval starts creating later versions on the same quotation.
+        const versionCount = await tx.quotationVersion.count({ where: { quotationId: id } });
+        const quotationVersion = await tx.quotationVersion.create({
+          data: {
+            quotationId: id,
+            versionNo: versionCount + 1,
+            payload: input.payload as Prisma.InputJsonValue,
+            payloadHash: input.payloadHash,
+          },
+        });
+
+        await tx.riskEvaluation.create({
+          data: {
+            quotationVersionId: quotationVersion.id,
+            score: new Prisma.Decimal(input.risk.score),
+            band: input.risk.band,
+            explanation: input.risk.explanation as Prisma.InputJsonValue,
+            configVersion: input.risk.configVersion,
+          },
+        });
+
+        // TAD SS11: create the ordered chain up front; "only the first pending step is
+        // actionable" is enforced by whatever later reads approval_records, not by withholding
+        // the later steps here.
+        if (input.approvalSteps.length) {
+          await tx.approvalRecord.createMany({
+            data: input.approvalSteps.map((step) => ({
+              quotationVersionId: quotationVersion.id,
+              stepOrder: step.stepOrder,
+              role: step.role,
+            })),
+          });
+        }
+
+        await withOptimisticVersion(tx.quotation, id, input.expectedVersion, {
+          status: input.finalStatus,
+        });
+
+        await recordAudit(tx, {
+          actor,
+          entityType: "Quotation",
+          entityId: id,
+          action: "SUBMIT",
+          before: null,
+          after: {
+            status: input.finalStatus,
+            quotationVersionId: quotationVersion.id,
+            riskScore: input.risk.score,
+            riskBand: input.risk.band,
+            approvalSteps: input.approvalSteps,
+          },
         });
 
         const updated = await tx.quotation.findUniqueOrThrow({

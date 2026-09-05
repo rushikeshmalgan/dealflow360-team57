@@ -39,6 +39,7 @@ function makeRepository(overrides: Partial<QuotationRepository> = {}): Quotation
     addLine: vi.fn().mockResolvedValue(makeQuotation()),
     patch: vi.fn().mockResolvedValue(makeQuotation()),
     updateDiscounts: vi.fn().mockResolvedValue(makeQuotation()),
+    submit: vi.fn().mockResolvedValue(makeQuotation()),
     ...overrides,
   };
 }

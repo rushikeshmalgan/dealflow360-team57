@@ -17,3 +17,13 @@ export type {
   LineMarginResult,
   QuotationMarginResult,
 } from "./domain/calculate-discount-margin";
+export { RISK_CONFIG_V1, scoreRisk } from "./domain/scoreRisk";
+export type {
+  RiskBand,
+  RiskConfig,
+  RiskExplanation,
+  RiskLineExplanation,
+  RiskLineInput,
+  RiskQuoteInput,
+  RiskResult,
+} from "./domain/scoreRisk";
