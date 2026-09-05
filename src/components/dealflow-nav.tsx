@@ -24,11 +24,11 @@ export function DealFlowNav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-border bg-primary text-primary-foreground shadow-sm">
+    <header className="sticky top-0 z-20 border-b border-sky-400/20 bg-[#081426]/95 text-slate-100 shadow-lg shadow-slate-950/20 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-white hover:opacity-95">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-sm font-black text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-400 text-sm font-black text-slate-950">
               DF
             </span>
             DealFlow360
@@ -46,8 +46,8 @@ export function DealFlowNav() {
                   className={cn(
                     "rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
                     active
-                      ? "bg-white/20 text-white shadow-xs font-semibold"
-                      : "text-primary-foreground/80 hover:bg-white/10 hover:text-white",
+                    ? "bg-sky-400 text-slate-950 shadow-xs font-semibold"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white",
                   )}
                 >
                   {item.label}
@@ -60,7 +60,7 @@ export function DealFlowNav() {
         <div className="flex items-center gap-3">
           <SignedIn>
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-xs text-primary-foreground/75">Signed in</span>
+              <span className="hidden text-xs text-slate-400 sm:inline">Signed in</span>
               <UserButton
                 appearance={{
                   elements: {
@@ -73,7 +73,7 @@ export function DealFlowNav() {
           <SignedOut>
             <Link
               href="/sign-in"
-              className="rounded-md bg-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/30"
+              className="rounded-md bg-sky-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-sky-300"
             >
               Sign In
             </Link>

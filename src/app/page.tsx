@@ -185,7 +185,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#f4f7f6] pb-16">
       <DealFlowNav />
 
-<<<<<<< HEAD
       <SignedOut>
         <main className="mx-auto max-w-2xl px-4 py-20 sm:px-6">
           <Card className="border-border bg-card p-8 text-center shadow-md">
@@ -206,8 +205,8 @@ export default function HomePage() {
                 Sign In to DealFlow360
               </Link>
             </div>
-=======
-      <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
+      {false && (
+        <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
         {/* Welcome & Command Bar */}
         <section className="relative overflow-hidden rounded-2xl bg-[#102a2a] px-6 py-7 text-white shadow-xl shadow-[#102a2a]/10 sm:px-8">
           <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-4 border-[#d7a84b]/20" />
@@ -407,7 +406,10 @@ export default function HomePage() {
                 </TableBody>
               </Table>
             </CardContent>
->>>>>>> 23eeba0b79d272c5442673ddf786256521b5d980
+          </Card>
+        </div>
+        </main>
+      )}
           </Card>
         </main>
       </SignedOut>

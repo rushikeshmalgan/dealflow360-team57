@@ -1,6 +1,7 @@
 /**
  * Client-side fetch helper for this codebase's own Route Handlers, which respond with the
- * {success, data} / {success:false, error} envelope from lib/api-response.ts (TAD SS30).
+ * Supports both the current {data, requestId} route-handler envelope and the
+ * {success, data} / {success:false, error} envelope from lib/api-response.ts.
  * Also tolerates a non-JSON response (e.g. Next's own 404 page) for endpoints a teammate
  * hasn't built yet, so the UI can show a clear message instead of a crash.
  */
@@ -50,14 +51,25 @@ export async function apiRequest<T>(input: string, init?: RequestInit): Promise<
     });
   }
 
-  if (body && typeof body === "object" && "success" in body) {
-    const envelope = body as { success: boolean; data?: T; error?: ApiEnvelopeError };
-    if (envelope.success) {
+  if (body && typeof body === "object") {
+    const envelope = body as {
+      success?: boolean;
+      data?: T;
+      error?: ApiEnvelopeError;
+      requestId?: string;
+    };
+
+    if (envelope.success === true) {
       return envelope.data as T;
     }
-    throw new ApiClientError(
-      envelope.error ?? { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
-    );
+
+    if (Object.prototype.hasOwnProperty.call(envelope, "data") && !envelope.error) {
+      return envelope.data as T;
+    }
+
+    if (envelope.error) {
+      throw new ApiClientError(envelope.error);
+    }
   }
 
   throw new ApiClientError({

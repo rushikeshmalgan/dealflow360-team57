@@ -36,6 +36,8 @@ export type RecurringCycle = "monthly" | "quarterly" | "yearly";
 
 export type ProductDetail = {
   id?: string;
+  categoryId?: string;
+  sku?: string;
   name: string;
   category: string;
   price: number;
