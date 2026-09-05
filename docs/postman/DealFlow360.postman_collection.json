@@ -1,0 +1,2756 @@
+{
+  "info": {
+    "_postman_id": "a3e5af9a-79c2-4651-b299-b3fd20d101ad",
+    "name": "DealFlow360 — Backend API (T0–T7)",
+    "description": "Every backend endpoint implemented so far: Catalog (products/categories), Customers & Tiers, Pricing, Discount & Approval governance config, and the Quotation Builder + Blended Risk / Submit flow.\n\n## Before you run anything\n1. `docker compose up -d` (Postgres + Redis) and `npm run dev`.\n2. `npm run prisma:seed` — creates the CustomerTier examples **and 4 fixed dev users** (one per role) that this collection authenticates as. Their ids are already filled in as collection variables (`devAdminId`, `devSalesRepId`, `devManagerId`, `devFinanceOpsId`).\n\n## How auth works here\nReal login is Clerk-based (`@clerk/nextjs`), which needs a browser session — not practical from Postman. Every request in this collection instead sends an `x-dev-user-id` header with the **internal `users.id`** of one of the 4 seeded dev accounts. `src/lib/auth/resolve-actor.ts` looks that row up in Postgres and uses **its** role/customerId — the header only selects *which* already-seeded user to act as, it can't grant a role that user doesn't have. This bypass is hard-disabled when `NODE_ENV=production` (see resolve-actor.ts); on a real deploy the same code path resolves the actor from an actual Clerk session instead.\n\n## How to run it\nFolders are numbered in dependency order — run top to bottom once (Postman \"Run collection\" works too). Each request's Tests tab captures the ids it creates into collection variables (`categoryHardwareId`, `productLaptopId`, `quotationId`, `quotationVersion`, ...) so later requests can reference them automatically — you shouldn't need to copy/paste any id by hand. Folder 05 is the star flow: it reproduces the exact TAD SS10 \"Gold customer\" example (Laptop 12%/15% ceiling = compliant, Setup Service 18%/10% ceiling = 8pp violation) end to end, and the final Submit call should come back MEDIUM-banded and PENDING_APPROVAL.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "devAdminId",
+      "value": "210b50ce-53f1-4762-906e-292cca031b02"
+    },
+    {
+      "key": "devSalesRepId",
+      "value": "54c4f54f-c413-44c7-98b1-60c0adb9ebef"
+    },
+    {
+      "key": "devManagerId",
+      "value": "62b0a6e1-07b5-4806-9c3f-42426c32b57a"
+    },
+    {
+      "key": "devFinanceOpsId",
+      "value": "b27383ea-84f4-4f95-b2df-7160a08bda1f"
+    },
+    {
+      "key": "categoryHardwareId",
+      "value": ""
+    },
+    {
+      "key": "categoryServicesId",
+      "value": ""
+    },
+    {
+      "key": "categoryScratchId",
+      "value": ""
+    },
+    {
+      "key": "productLaptopId",
+      "value": ""
+    },
+    {
+      "key": "productSetupServiceId",
+      "value": ""
+    },
+    {
+      "key": "productScratchId",
+      "value": ""
+    },
+    {
+      "key": "tierGoldId",
+      "value": ""
+    },
+    {
+      "key": "tierScratchId",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "customerScratchId",
+      "value": ""
+    },
+    {
+      "key": "priceListId",
+      "value": ""
+    },
+    {
+      "key": "discountRuleTierId",
+      "value": ""
+    },
+    {
+      "key": "discountRuleCategoryId",
+      "value": ""
+    },
+    {
+      "key": "discountRuleScratchId",
+      "value": ""
+    },
+    {
+      "key": "discountRuleScratchTierId",
+      "value": ""
+    },
+    {
+      "key": "approvalRuleMediumId",
+      "value": ""
+    },
+    {
+      "key": "approvalRuleHighId",
+      "value": ""
+    },
+    {
+      "key": "approvalRuleLowId",
+      "value": ""
+    },
+    {
+      "key": "approvalRuleScratchId",
+      "value": ""
+    },
+    {
+      "key": "quotationId",
+      "value": ""
+    },
+    {
+      "key": "quotationVersion",
+      "value": ""
+    },
+    {
+      "key": "laptopLineId",
+      "value": ""
+    },
+    {
+      "key": "setupServiceLineId",
+      "value": ""
+    },
+    {
+      "key": "quotation2Id",
+      "value": ""
+    },
+    {
+      "key": "quotation2Version",
+      "value": ""
+    },
+    {
+      "key": "quotation2LineId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Health",
+      "description": "No auth required — infra check only (T0.1).",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "**Auth:** none.\n\n**Input:** none.\n\n**Output (200):**\n```json\n{\n  \"status\": \"ok\",\n  \"app\": \"healthy\",\n  \"database\": { \"status\": \"healthy\" },\n  \"queue\": { \"status\": \"healthy\" },\n  \"timestamp\": \"2026-09-05T11:17:29.418Z\"\n}\n```\n`queue.status` can independently show `\"degraded\"` if Redis is down — that never blocks business logic, only the queue-dependent (P1) features."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 - Catalog (Categories & Products)",
+      "description": "Admin-only writes, any internal role can read (T2.1). Creates the Hardware/Services categories and Laptop/Setup Service products used by every later folder.",
+      "item": [
+        {
+          "name": "POST /api/categories — create Hardware",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hardware\",\n  \"description\": \"Physical hardware products\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only (`requireAdmin`).\n\n**Input:** `name` (required), `description` (optional).\n\n**Output (201):**\n```json\n{ \"data\": { \"id\": \"...\", \"name\": \"Hardware\", \"description\": \"Physical hardware products\", \"createdAt\": \"...\", \"updatedAt\": \"...\" } }\n```\nCaptures `id` into `categoryHardwareId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('categoryHardwareId', json.data.id);",
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/categories — create Services",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Services\",\n  \"description\": \"Professional services\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Same shape as above. Captures `id` into `categoryServicesId` — this is the category T3.1's 10% ceiling gets attached to later, and that the Setup Service product belongs to."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('categoryServicesId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/categories — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "**Auth:** any internal role (`requireInternal`). **Output (200):** `{ \"data\": [ {category}, ... ] }`, alphabetical by name."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/categories/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryHardwareId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{categoryHardwareId}}"
+              ]
+            },
+            "description": "**Output (200):** the single category. **404 NOT_FOUND** if the id doesn't exist."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/categories/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryHardwareId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{categoryHardwareId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Physical hardware products (laptops, peripherals)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only. Partial update — any subset of `name`/`description`. **Output (200):** the updated category."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/products — create Laptop",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryHardwareId}}\",\n  \"sku\": \"LAPTOP-001\",\n  \"name\": \"Laptop\",\n  \"price\": 1000,\n  \"costPrice\": 700,\n  \"unit\": \"unit\",\n  \"taxPct\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only.\n\n**Input:** `categoryId`, `sku`, `name`, `price`, `unit`, `taxPct` required; `costPrice` (added for T6.4's margin calc — defaults to 0), `description`, `isSubscription`/`recurringCycle`, `variants[]`, `isActive` optional.\n\n**Output (201):**\n```json\n{ \"data\": { \"id\": \"...\", \"category\": {...}, \"sku\": \"LAPTOP-001\", \"name\": \"Laptop\", \"price\": \"1000.00\", \"costPrice\": \"700.00\", \"unit\": \"unit\", \"taxPct\": \"0\", \"isActive\": true, \"variants\": [], ... } }\n```\nCaptures `id` into `productLaptopId`. This is the TAD SS10 Gold-example \"Laptop\" line (12% discount against a 15% ceiling — compliant)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('productLaptopId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/products — create Setup Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryServicesId}}\",\n  \"sku\": \"SETUP-001\",\n  \"name\": \"Setup Service\",\n  \"price\": 200,\n  \"costPrice\": 100,\n  \"unit\": \"unit\",\n  \"taxPct\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Captures `id` into `productSetupServiceId`. This is the Gold-example line that gets **flagged** (18% discount against a 10% category ceiling — 8 percentage points of excess)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('productSetupServiceId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/products — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?categoryId={{categoryHardwareId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryHardwareId}}"
+                }
+              ]
+            },
+            "description": "**Query (optional):** `active` (true/false), `categoryId`. **Output (200):** `{ \"data\": [ {product}, ... ] }`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/products/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productLaptopId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productLaptopId}}"
+              ]
+            },
+            "description": "**Output (200):** the single product with its variants."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/products/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productLaptopId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productLaptopId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1050\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only. Partial update of any product field. **Output (200):** updated product."
+          },
+          "response": []
+        },
+        {
+          "name": "[Cleanup demo] POST /api/products — scratch product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryHardwareId}}\",\n  \"sku\": \"SCRATCH-DELETE-ME\",\n  \"name\": \"Scratch product (safe to delete)\",\n  \"price\": 1,\n  \"unit\": \"unit\",\n  \"taxPct\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "A disposable product just to demonstrate delete below — not used by any later folder."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('productScratchId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/products/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productScratchId}}"
+              ]
+            },
+            "description": "**Auth:** ADMIN only. **Output: 204 No Content.** Note: this is a *soft* delete — the repository sets `isActive: false` rather than removing the row (historical quotation lines must keep referencing it)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Customers & Customer Tiers",
+      "description": "Admin-only writes, any internal role can read (T2.2).",
+      "item": [
+        {
+          "name": "GET /api/customer-tiers — list (finds seeded Gold)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers"
+              ]
+            },
+            "description": "**Output (200):** `{ \"data\": [ {id, name, createdAt, updatedAt}, ... ] }`. `npm run prisma:seed` creates Bronze/Silver/Gold as **examples only** — the app never hardcodes tier names. This request's Test script finds the row named `Gold` and stores its id as `tierGoldId`, since the rest of the collection quotes a Gold customer (matching the TAD SS10 example)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const gold = (json.data || []).find(t => t.name === 'Gold');",
+                  "if (gold) pm.collectionVariables.set('tierGoldId', gold.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/customer-tiers — create Platinum",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Platinum\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only. **Input:** `name` (unique). **Output (201):** the created tier. Captures `id` into `tierScratchId` (used for the PATCH/DELETE demos below only)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('tierScratchId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/customer-tiers/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers/{{tierScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers",
+                "{{tierScratchId}}"
+              ]
+            },
+            "description": "**Output (200):** the single tier. **404 NOT_FOUND** otherwise."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/customer-tiers/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers/{{tierScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers",
+                "{{tierScratchId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Platinum Plus\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Output (200):** updated tier."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/customer-tiers/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers/{{tierScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers",
+                "{{tierScratchId}}"
+              ]
+            },
+            "description": "**Output: 204 No Content.**"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/customers — create Acme Corp (Gold)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"tierId\": \"{{tierGoldId}}\",\n  \"primaryContactEmail\": \"buyer@acme.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only.\n\n**Input:** `name`, `tierId` required; `primaryContactEmail` optional.\n\n**Output (201):**\n```json\n{ \"data\": { \"id\": \"...\", \"name\": \"Acme Corp\", \"tierId\": \"...\", \"primaryContactEmail\": \"buyer@acme.test\", \"tier\": { \"id\": \"...\", \"name\": \"Gold\" }, ... } }\n```\nCaptures `id` into `customerId` — this is the customer every quotation below is built for."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('customerId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/customers — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers"
+              ]
+            },
+            "description": "**Output (200):** `{ \"data\": [ {customer}, ... ] }`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/customers/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "description": "**Output (200):** the single customer."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/customers/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryContactEmail\": \"billing@acme.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Output (200):** updated customer."
+          },
+          "response": []
+        },
+        {
+          "name": "[Cleanup demo] POST + DELETE scratch customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Scratch customer (safe to delete)\",\n  \"tierId\": \"{{tierGoldId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Run this, then run the DELETE request right after it (same folder) to see the 204 response. Captures id into `customerScratchId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('customerScratchId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/customers/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customers",
+                "{{customerScratchId}}"
+              ]
+            },
+            "description": "**Output: 204 No Content.**"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Pricing (Price Lists)",
+      "description": "T2.3 — the canonical price lookup. `resolvePrice` here is the exact function the Quotation Builder calls internally; nothing else re-derives price.",
+      "item": [
+        {
+          "name": "POST /api/price-lists — create Gold/USD price list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/price-lists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "price-lists"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gold USD\",\n  \"tierId\": \"{{tierGoldId}}\",\n  \"currency\": \"USD\",\n  \"isActive\": true,\n  \"items\": [\n    {\n      \"productId\": \"{{productLaptopId}}\",\n      \"unitPrice\": 1000\n    },\n    {\n      \"productId\": \"{{productSetupServiceId}}\",\n      \"unitPrice\": 200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only.\n\n**Input:** `name`, `tierId`, `currency` (3-letter), `items[]` (`productId`, optional `variantId`, `unitPrice`) — at least one item, no duplicate product/variant scope.\n\n**Output (201):** the price list with resolved item names. **409 CONFIGURATION_CONFLICT** if a rule for this exact tier+currency+product+variant already exists (an overlap the DoD explicitly tests). Captures `id` into `priceListId` — every quotation below is created against this price list."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('priceListId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/price-lists — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/price-lists?tierId={{tierGoldId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "price-lists"
+              ],
+              "query": [
+                {
+                  "key": "tierId",
+                  "value": "{{tierGoldId}}"
+                }
+              ]
+            },
+            "description": "**Query (optional):** `tierId`, `currency`, `active`. **Output (200):** `{ \"data\": [ {priceList}, ... ] }`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/price-lists?resolve — resolve Laptop's price for Gold/USD",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/price-lists?customerTierId={{tierGoldId}}&productId={{productLaptopId}}&currency=USD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "price-lists"
+              ],
+              "query": [
+                {
+                  "key": "customerTierId",
+                  "value": "{{tierGoldId}}"
+                },
+                {
+                  "key": "productId",
+                  "value": "{{productLaptopId}}"
+                },
+                {
+                  "key": "currency",
+                  "value": "USD"
+                }
+              ]
+            },
+            "description": "Presence of `productId`/`customerTierId` switches this GET into the resolver instead of the list. **Output (200):**\n```json\n{ \"data\": { \"priceListId\": \"...\", \"customerTierId\": \"...\", \"productId\": \"...\", \"variantId\": null, \"currency\": \"USD\", \"baseUnitPrice\": \"1000.00\", \"variantExtraPrice\": \"0.00\", \"unitPrice\": \"1000.00\", \"matchedRule\": \"PRODUCT\" } }\n```\n**404 NOT_FOUND** if no active price resolves (inactive product/variant, or no rule for this tier+currency+product) — this is the same rule enforced when adding a quotation line."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Discount & Approval Governance (Epic 3)",
+      "description": "Admin-only config: discount ceilings (T3.1) and the risk-band -> approval-chain mapping (T3.2). Both are read-only, canonical lookups for the Quotation Builder/Submit flow — nothing downstream re-implements this logic.",
+      "item": [
+        {
+          "name": "POST /api/discount-rules — TIER Gold 15%",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"TIER\",\n  \"tierId\": \"{{tierGoldId}}\",\n  \"maxDiscountPct\": 15,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only.\n\n**Input:** `scope` (`TIER`|`CATEGORY`), matching `tierId` or `categoryId`, `maxDiscountPct` (0-100), `isActive`.\n\n**Output (201):** the rule, `maxDiscountPct` echoed back as `\"15\"` (stored as a 0-1 fraction, spoken as 0-100 at the API boundary). **409 CONFIGURATION_CONFLICT** if an active rule already exists for this tier/category (DB partial-unique-index backstop). Captures `id` into `discountRuleTierId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('discountRuleTierId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/discount-rules — CATEGORY Services 10%",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"CATEGORY\",\n  \"categoryId\": \"{{categoryServicesId}}\",\n  \"maxDiscountPct\": 10,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "This is the ceiling that makes the Setup Service line violate in the Gold-fixture walkthrough: 10% is lower than the 15% tier ceiling, so TAD SS10's \"lower ceiling wins\" rule picks this one for any Services-category line. Captures `id` into `discountRuleCategoryId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('discountRuleCategoryId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/discount-rules — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules"
+              ]
+            },
+            "description": "**Auth:** any internal role. **Query (optional):** `scope`, `tierId`, `categoryId`, `active`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/discount-rules/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules/{{discountRuleTierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules",
+                "{{discountRuleTierId}}"
+              ]
+            },
+            "description": "**Output (200):** the single rule."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/discount-rules/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules/{{discountRuleTierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules",
+                "{{discountRuleTierId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Confirmed with pricing team, no change to the ceiling itself\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Note the verb is PUT, not PATCH**, for this resource. `scope`/`tierId`/`categoryId` are immutable after creation (recreate the rule to retarget it) — only `maxDiscountPct`/`isActive`/`reason` are editable; any subset can be sent. This example deliberately leaves `maxDiscountPct` at 15 (unset = unchanged) so the ceiling used by folder 05's Gold-fixture walkthrough further down stays exactly 15%."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/discount-rules?resolve — ceiling for Gold + Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules?resolve=true&tierId={{tierGoldId}}&categoryId={{categoryServicesId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules"
+              ],
+              "query": [
+                {
+                  "key": "resolve",
+                  "value": "true"
+                },
+                {
+                  "key": "tierId",
+                  "value": "{{tierGoldId}}"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryServicesId}}"
+                }
+              ]
+            },
+            "description": "This IS `resolveDiscountCeiling` (T3.1) — the exact function the Submit flow (T7.2) calls per line.\n\n**Output (200) — reproduces the TAD SS10 Gold example exactly:**\n```json\n{\n  \"data\": {\n    \"tierId\": \"...\", \"categoryId\": \"...\",\n    \"tierCeilingPct\": \"15\",\n    \"categoryCeilingPct\": \"10\",\n    \"allowedDiscountPct\": \"10\",\n    \"limitingScope\": \"CATEGORY\"\n  }\n}\n```\n`allowedDiscountPct` is the *lower* of the two — \"if both tier and category ceilings exist, use the lower ceiling.\""
+          },
+          "response": []
+        },
+        {
+          "name": "[Cleanup demo] POST scratch tier for this demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-tiers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-tiers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Discount-Rule-Scratch-Tier\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "A dedicated, never-deleted-elsewhere tier so this demo doesn't depend on folder 02's Platinum scratch tier (which folder 02 already deletes). Captures id into `discountRuleScratchTierId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('discountRuleScratchTierId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Cleanup demo] POST + DELETE scratch discount rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"TIER\",\n  \"tierId\": \"{{discountRuleScratchTierId}}\",\n  \"maxDiscountPct\": 5,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Captures id into `discountRuleScratchId` for the DELETE demo below."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('discountRuleScratchId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/discount-rules/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/discount-rules/{{discountRuleScratchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "discount-rules",
+                "{{discountRuleScratchId}}"
+              ]
+            },
+            "description": "**Output: 204 No Content.**"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/approval-rules — MEDIUM -> Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"riskBand\": \"MEDIUM\",\n  \"isActive\": true,\n  \"steps\": [\n    {\n      \"stepOrder\": 1,\n      \"role\": \"MANAGER\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** ADMIN only.\n\n**Input:** `riskBand` (`LOW`|`MEDIUM`|`HIGH`, unique — one rule per band ever), `steps[]` (`stepOrder` contiguous from 1, `role`). Validation rejects duplicate/gapped step orders and a Finance step preceding a Manager step.\n\n**Output (201):** the rule with its ordered steps. Captures `id` into `approvalRuleMediumId` — this is the chain the Gold-fixture Submit call routes to."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('approvalRuleMediumId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/approval-rules — HIGH -> Manager then Finance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"riskBand\": \"HIGH\",\n  \"isActive\": true,\n  \"steps\": [\n    {\n      \"stepOrder\": 1,\n      \"role\": \"MANAGER\"\n    },\n    {\n      \"stepOrder\": 2,\n      \"role\": \"FINANCE_OPS\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "TAD SS11: HIGH band is a two-stage chain, Manager before Finance."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('approvalRuleHighId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/approval-rules — LOW -> no approval",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"riskBand\": \"LOW\",\n  \"isActive\": true,\n  \"steps\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "An empty `steps[]` is what makes Submit auto-APPROVE instead of routing to PENDING_APPROVAL."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set('approvalRuleLowId', json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/approval-rules — list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules"
+              ]
+            },
+            "description": "**Query (optional):** `riskBand`, `active`."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/approval-rules/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules/{{approvalRuleMediumId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules",
+                "{{approvalRuleMediumId}}"
+              ]
+            },
+            "description": "**Output (200):** the single rule with its steps."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/approval-rules/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devAdminId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/approval-rules/{{approvalRuleHighId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "approval-rules",
+                "{{approvalRuleHighId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Confirmed with Finance leadership\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Note the verb is PUT, not PATCH.** `riskBand` is immutable after creation."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Quotation Builder -> Submit (TAD SS10 Gold Fixture)",
+      "description": "The full T6.1-T6.5 + T7.1-T7.2 flow as one Sales Rep, reproducing the exact documented example: Laptop 12% (vs 15% ceiling, compliant) + Setup Service 18% (vs 10% ceiling, 8pp violation) -> flagged MEDIUM -> routed to Manager approval.",
+      "item": [
+        {
+          "name": "POST /api/quotations — create Draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"priceListId\": \"{{priceListId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** SALES_REP only (TAD SS6: \"Create and revise assigned quotations\" is Sales-Rep-only; Manager/Finance get Read, Admin has none by default). The created quotation's `salesRepId` is always the caller — never client-supplied.\n\n**Input:** `customerId`, `priceListId` (must belong to the customer's tier, or `400 VALIDATION_ERROR`).\n\n**Output (201):**\n```json\n{ \"data\": { \"id\": \"...\", \"code\": \"QT-000045\", \"status\": \"DRAFT\", \"version\": 1, \"lines\": [], \"summary\": { \"netBeforeTax\": \"0.00\", \"totalCost\": \"0.00\", \"marginAmount\": \"0.00\", \"marginPct\": null }, ... } }\n```\nCaptures `quotationId` and `quotationVersion` (starts at 1)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data.quotation || json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotationId', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotationVersion', q.version);",
+                  "  if (q.lines && q.lines.length > 0) {",
+                  "    pm.collectionVariables.set('laptopLineId', q.lines[0].id);",
+                  "    if (q.lines[1]) pm.collectionVariables.set('setupServiceLineId', q.lines[1].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/quotations — list (Sales Rep, scoped to own)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations?status=DRAFT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DRAFT"
+                }
+              ]
+            },
+            "description": "**Query (optional):** `status`, `customerId`, `salesRepId`. A SALES_REP's `salesRepId` is silently forced to their own id server-side — passing someone else's id in the query does nothing (TAD SS6: \"IDs supplied by the browser... never establish ownership\"). MANAGER/FINANCE_OPS/ADMIN can filter or see all reps' quotations."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/quotations/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}"
+              ]
+            },
+            "description": "**Output (200):** the full quotation. `summary`/each line's `effectiveDiscountPct`/`marginPct` are **always recomputed live** (T6.5), never read from a stored column."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations/{id}/lines — add Laptop x1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/lines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "lines"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotationVersion}}\",\n  \"productId\": \"{{productLaptopId}}\",\n  \"quantity\": 1,\n  \"billingType\": \"ONE_TIME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** SALES_REP, must own this Draft quotation (`403 FORBIDDEN`/`409 INVALID_STATE_TRANSITION` otherwise).\n\n**Input:** `expectedVersion` (optimistic concurrency — must match the quotation's current `version`), `productId`, optional `variantId`, `quantity`, `billingType`.\n\nPrice is resolved via `PricingService.resolvePrice` (folder 03) and snapshotted onto the line — it will NOT silently reprice later if the price list changes.\n\n**Output (201):** the whole quotation again, now with this line and `version` bumped to 2. Every mutation endpoint returns the full quotation, not just the line, so the client always has fresh live totals.\n\n**409 VERSION_CONFLICT** with `{expectedVersion, currentVersion}` if `expectedVersion` is stale — see folder 06 for a live repro."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data.quotation || json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotationId', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotationVersion', q.version);",
+                  "  if (q.lines && q.lines.length > 0) {",
+                  "    pm.collectionVariables.set('laptopLineId', q.lines[0].id);",
+                  "    if (q.lines[1]) pm.collectionVariables.set('setupServiceLineId', q.lines[1].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/quotations/{id}/lines — add Setup Service x1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/lines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "lines"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotationVersion}}\",\n  \"productId\": \"{{productSetupServiceId}}\",\n  \"quantity\": 1,\n  \"billingType\": \"ONE_TIME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Same shape as above. Quotation version moves to 3; `summary.netBeforeTax` becomes 1000+200=1200.00 (both lines still at 0% discount here)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data.quotation || json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotationId', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotationVersion', q.version);",
+                  "  if (q.lines && q.lines.length > 0) {",
+                  "    pm.collectionVariables.set('laptopLineId', q.lines[0].id);",
+                  "    if (q.lines[1]) pm.collectionVariables.set('setupServiceLineId', q.lines[1].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/quotations/{id}/discounts — 12% Laptop, 18% Setup Service",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/discounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "discounts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotationVersion}}\",\n  \"lineDiscounts\": [\n    {\n      \"lineId\": \"{{laptopLineId}}\",\n      \"lineDiscountPct\": 12\n    },\n    {\n      \"lineId\": \"{{setupServiceLineId}}\",\n      \"lineDiscountPct\": 18\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Input:** `expectedVersion` plus at least one of `orderDiscountPct` (order-level) / `lineDiscounts[]` (per line) — both can be set together, T6.4's `combineDiscounts` blends them sequentially (`1 - (1-line)*(1-order)`, NOT additive).\n\n**Deliberately does not enforce T3.1's ceiling** — the PRD treats the ceiling as a live UI warning while drafting, not a hard save-time block; the hard check happens at Submit (T7.2).\n\n**Output (200):**\n```json\n{ \"lines\": [\n  { \"...Laptop\": \"\", \"effectiveDiscountPct\": \"12\", \"netBeforeTax\": \"880.00\", \"marginPct\": \"20.4545\" },\n  { \"...Setup Service\": \"\", \"effectiveDiscountPct\": \"18\", \"netBeforeTax\": \"164.00\", \"marginPct\": \"39.0244\" }\n], \"summary\": { \"netBeforeTax\": \"1044.00\", \"marginAmount\": \"244.00\", \"marginPct\": \"23.3716\" } }\n```\nVersion moves to 4."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data.quotation || json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotationId', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotationVersion', q.version);",
+                  "  if (q.lines && q.lines.length > 0) {",
+                  "    pm.collectionVariables.set('laptopLineId', q.lines[0].id);",
+                  "    if (q.lines[1]) pm.collectionVariables.set('setupServiceLineId', q.lines[1].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/quotations/{id} — live totals before submit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}"
+              ]
+            },
+            "description": "Same live-computed numbers as the previous response — this is T6.5's \"live margin indicator\": re-fetching without changing anything reproduces identical totals, computed fresh every time."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations/{id}/submit — the moment of truth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotationVersion}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Auth:** SALES_REP, owner, quotation must currently be `DRAFT` with >=1 line.\n\nThis is `SubmitQuotationUseCase` (T7.2): resolves each line's ceiling (T3.1), runs `scoreRisk` (T7.1) using the exact numbers already shown by T6.5, looks up the matching `ApprovalRule` (T3.2), then atomically freezes a `QuotationVersion` snapshot + persists the `RiskEvaluation` + creates `ApprovalRecord`s + transitions the quotation's status.\n\n**Output (200) — this reproduces the TAD SS10 Gold example exactly:**\n```json\n{\n  \"quotation\": { \"status\": \"PENDING_APPROVAL\", \"version\": 5, ... },\n  \"requiresApproval\": true,\n  \"risk\": {\n    \"score\": 6.43,\n    \"band\": \"MEDIUM\",\n    \"configVersion\": 1,\n    \"explanation\": {\n      \"lines\": [\n        { \"allowedDiscountPct\": 15, \"effectiveDiscountPct\": 12, \"excessPct\": 0 },\n        { \"allowedDiscountPct\": 10, \"effectiveDiscountPct\": 18, \"excessPct\": 8 }\n      ]\n    }\n  },\n  \"approvalSteps\": [ { \"stepOrder\": 1, \"role\": \"MANAGER\" } ]\n}\n```\nLaptop: 0 excess (compliant). Setup Service: 8 percentage points excess -> the quotation is flagged. Even though the blended `score` (~6.4) is well under the MEDIUM threshold (30) on its own, TAD SS10's override — \"any line violation forces at least manager approval\" — bumps the band up to MEDIUM anyway. That's why `requiresApproval` is `true` and `approvalSteps` shows the Manager step from folder 04.\n\n**Error cases:** `400 VALIDATION_ERROR` (no lines), `409 INVALID_STATE_TRANSITION` (not Draft — e.g. calling this twice), `409 VERSION_CONFLICT` (stale `expectedVersion`)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data.quotation || json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotationId', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotationVersion', q.version);",
+                  "  if (q.lines && q.lines.length > 0) {",
+                  "    pm.collectionVariables.set('laptopLineId', q.lines[0].id);",
+                  "    if (q.lines[1]) pm.collectionVariables.set('setupServiceLineId', q.lines[1].id);",
+                  "  }",
+                  "}",
+                  "pm.test('routed to PENDING_APPROVAL', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data.quotation.status).to.eql('PENDING_APPROVAL');",
+                  "  pm.expect(json.data.risk.band).to.eql('MEDIUM');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/quotations/{id} — after submit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}"
+              ]
+            },
+            "description": "Confirms the status stuck: `status: \"PENDING_APPROVAL\"`, `version: 5`. Lines/summary are unchanged from before submit — submitting doesn't alter commercial terms, only lifecycle state."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Quotation Line Editing (quantity, remove, version conflict)",
+      "description": "A second, separate quotation used to demonstrate PATCH /api/quotations/{id}'s two commands and a real optimistic-concurrency conflict, without disturbing the Gold fixture in folder 05.",
+      "item": [
+        {
+          "name": "POST /api/quotations — create Draft #2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"priceListId\": \"{{priceListId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Same as folder 05's first request. Captures into `quotation2Id`/`quotation2Version`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotation2Id', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotation2Version', q.version);",
+                  "  if (q.lines && q.lines.length > 0) pm.collectionVariables.set('quotation2LineId', q.lines[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/quotations/{id}/submit — reject: no lines",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotation2Id}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotation2Id}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotation2Version}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Output (400):**\n```json\n{ \"error\": { \"code\": \"VALIDATION_ERROR\", \"message\": \"Cannot submit a quotation with no lines\", \"details\": { \"id\": \"...\" } } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations/{id}/lines — add Laptop x1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotation2Id}}/lines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotation2Id}}",
+                "lines"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotation2Version}}\",\n  \"productId\": \"{{productLaptopId}}\",\n  \"quantity\": 1,\n  \"billingType\": \"ONE_TIME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Moves quotation #2 to version 2. Captures the new line's id into `quotation2LineId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotation2Id', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotation2Version', q.version);",
+                  "  if (q.lines && q.lines.length > 0) pm.collectionVariables.set('quotation2LineId', q.lines[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/quotations/{id}/lines — replay with stale version (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotation2Id}}/lines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotation2Id}}",
+                "lines"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"productId\": \"{{productLaptopId}}\",\n  \"quantity\": 1,\n  \"billingType\": \"ONE_TIME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Hardcodes `expectedVersion: 1` — stale now that the previous request already bumped it to 2. This simulates two people (or a retried request) editing the same quotation.\n\n**Output (409):**\n```json\n{ \"error\": { \"code\": \"VERSION_CONFLICT\", \"message\": \"This resource has been modified since it was last read\", \"details\": { \"id\": \"...\", \"expectedVersion\": 1, \"currentVersion\": 2 } } }\n```\nThe client is expected to re-fetch (GET the quotation), read the real current version, and retry — never blindly overwrite."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/quotations/{id} — update line quantity to 3",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotation2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotation2Id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotation2Version}}\",\n  \"updateLineQuantity\": {\n    \"lineId\": \"{{quotation2LineId}}\",\n    \"quantity\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Input:** `expectedVersion` plus **exactly one** of `updateLineQuantity: {lineId, quantity}` or `removeLineId` (the schema rejects both-or-neither with `400 VALIDATION_ERROR`).\n\n**Output (200):** quotation version -> 3, the line's `quantity: 3`, `netBeforeTax`/`marginAmount` scaled accordingly (3000.00 / 900.00 at 0% discount)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotation2Id', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotation2Version', q.version);",
+                  "  if (q.lines && q.lines.length > 0) pm.collectionVariables.set('quotation2LineId', q.lines[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/quotations/{id} — remove the line",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotation2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotation2Id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotation2Version}}\",\n  \"removeLineId\": \"{{quotation2LineId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "**Output (200):** quotation version -> 4, `lines: []`, `summary` back to all-zero/null-margin."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  const q = json.data;",
+                  "  if (q.id) pm.collectionVariables.set('quotation2Id', q.id);",
+                  "  if (q.version !== undefined) pm.collectionVariables.set('quotation2Version', q.version);",
+                  "  if (q.lines && q.lines.length > 0) pm.collectionVariables.set('quotation2LineId', q.lines[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Access Control & Error Cases",
+      "description": "The same endpoints, called by the wrong role/actor/id, to show the exact error envelope (T0.3) for each failure mode.",
+      "item": [
+        {
+          "name": "GET /api/products — no x-dev-user-id header (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "description": "No auth header at all — `getRequestActor` resolves to `null`.\n\n**Output (401):**\n```json\n{ \"error\": { \"code\": \"AUTHENTICATION_REQUIRED\", \"message\": \"Authentication is required\", \"requestId\": \"...\" } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/products — Sales Rep tries an Admin-only write (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryHardwareId}}\",\n  \"sku\": \"SHOULD-FAIL\",\n  \"name\": \"x\",\n  \"price\": 1,\n  \"unit\": \"unit\",\n  \"taxPct\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "SALES_REP is a valid, authenticated internal actor — just not ADMIN.\n\n**Output (403):**\n```json\n{ \"error\": { \"code\": \"FORBIDDEN\", \"message\": \"Administrator access is required\" } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations/{id}/lines — Manager tries a Sales-Rep-only write (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devManagerId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/lines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "lines"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"productId\": \"{{productLaptopId}}\",\n  \"quantity\": 1,\n  \"billingType\": \"ONE_TIME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "TAD SS6: Manager has **Read** on quotations, not write, even though Manager isn't `CUSTOMER` and passes `requireInternal` elsewhere.\n\n**Output (403):**\n```json\n{ \"error\": { \"code\": \"FORBIDDEN\", \"message\": \"Requires one of the following roles: SALES_REP\" } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/quotations/{id} — Manager CAN read any quotation (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devManagerId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}"
+              ]
+            },
+            "description": "Contrast with the previous request — read access is broader than write access for this role."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/quotations/{id} — non-existent id (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            },
+            "description": "**Output (404):**\n```json\n{ \"error\": { \"code\": \"NOT_FOUND\", \"message\": \"Quotation not found\", \"details\": { \"id\": \"00000000-0000-0000-0000-000000000000\" } } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations — invalid body (400 VALIDATION_ERROR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"not-a-uuid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Fails Zod validation before it ever reaches the service (`priceListId` missing, `customerId` not a UUID).\n\n**Output (400):**\n```json\n{ \"error\": { \"code\": \"VALIDATION_ERROR\", \"message\": \"Request validation failed\", \"details\": { \"fieldErrors\": { \"customerId\": [\"Invalid uuid\"], \"priceListId\": [\"Required\"] } } } }\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/quotations/{id}/submit — resubmitting (409 INVALID_STATE_TRANSITION)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-dev-user-id",
+                "value": "{{devSalesRepId}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotations/{{quotationId}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "quotations",
+                "{{quotationId}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": \"{{quotationVersion}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Run this against the folder-05 quotation *after* it has already been submitted once.\n\n**Output (409):**\n```json\n{ \"error\": { \"code\": \"INVALID_STATE_TRANSITION\", \"message\": \"Only a Draft quotation can be submitted\", \"details\": { \"id\": \"...\", \"status\": \"PENDING_APPROVAL\" } } }\n```\nThe same code/shape covers trying to add/remove lines or change discounts once a quotation has left Draft."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
