@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -45,8 +45,16 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
   const router = useRouter();
   const [product, setProduct] = useState<ProductDetail>(initialProduct);
   const [quantityOnHand, setQuantityOnHand] = useState("");
+  const [categoryId, setCategoryId] = useState(initialProduct.categoryId ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (categoryId || mode !== "create") return;
+    apiRequest<{ id: string; name: string }[]>("/api/categories")
+      .then((categories) => setCategoryId(categories[0]?.id ?? ""))
+      .catch((err) => setError(err instanceof ApiClientError ? err.message : "Failed to load categories."));
+  }, [categoryId, mode]);
 
   function updateField<K extends keyof ProductDetail>(key: K, value: ProductDetail[K]) {
     setProduct((prev) => ({ ...prev, [key]: value }));
@@ -79,16 +87,38 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
     setSaving(true);
     setError(null);
     try {
+      let selectedCategoryId = categoryId;
+      if (mode === "create" && !selectedCategoryId) {
+        const categories = await apiRequest<{ id: string; name: string }[]>("/api/categories");
+        selectedCategoryId = categories[0]?.id ?? "";
+        setCategoryId(selectedCategoryId);
+      }
+      if (mode === "create" && (!selectedCategoryId || !product.sku?.trim())) {
+        throw new ApiClientError({
+          code: "VALIDATION_ERROR",
+          message: "SKU and a product category are required.",
+        });
+      }
       const payload = {
+        ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+        ...(product.sku?.trim() ? { sku: product.sku.trim() } : {}),
         name: product.name,
-        category: product.category,
         price: product.price,
+        costPrice: 0,
         unit: product.unit,
         description: product.description,
-        tax_pct: product.tax_pct,
-        is_subscription: product.is_subscription,
-        recurring_cycle: product.is_subscription ? product.recurring_cycle : null,
-        variants: product.variants,
+        taxPct: product.tax_pct * 100,
+        isSubscription: product.is_subscription,
+        recurringCycle: product.is_subscription
+          ? product.recurring_cycle?.toUpperCase()
+          : null,
+        variants: product.variants.flatMap((variant) =>
+          variant.values.map((value) => ({
+            attribute: variant.attribute,
+            value,
+            extraPrice: variant.extra_price,
+          })),
+        ),
       };
       if (mode === "create") {
         const created = await apiRequest<{ id: string }>("/api/products", {
@@ -131,6 +161,13 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
             <div className="space-y-4">
               <Field label="Product name">
                 <Input value={product.name} onChange={(e) => updateField("name", e.target.value)} />
+              </Field>
+              <Field label="SKU">
+                <Input
+                  value={product.sku ?? ""}
+                  onChange={(e) => updateField("sku", e.target.value)}
+                  placeholder="e.g. HW-LAP-001"
+                />
               </Field>
               <Field label="Category">
                 <Input
@@ -182,7 +219,7 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
               {product.is_subscription && (
                 <Field label="Recurring">
                   <Select
-                    value={product.recurring_cycle ?? undefined}
+                    value={product.recurring_cycle ?? null}
                     onValueChange={(value) =>
                       updateField("recurring_cycle", value as RecurringCycle)
                     }
