@@ -258,8 +258,6 @@ export default function HomePage() {
                 Sign In to DealFlow360
               </Link>
             </div>
-<<<<<<< HEAD
-=======
       {false && (
         <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
         {/* Welcome & Command Bar */}
@@ -465,7 +463,6 @@ export default function HomePage() {
         </div>
         </main>
       )}
->>>>>>> f65f9fc423dec4447565cf0aaf5626ae20ae24f1
           </Card>
         </main>
       </SignedOut>
