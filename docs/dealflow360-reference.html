@@ -1,0 +1,863 @@
+<title>DealFlow360 API Reference</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#F5F2EA;
+    --surface:#FFFFFF;
+    --surface-alt:#ECE6D6;
+    --line:#DBD4BF;
+    --ink:#23262B;
+    --ink-muted:#726B5A;
+    --accent:#2B4570;
+    --accent-soft:#DEE4EE;
+    --ok:#3F7A4E;
+    --ok-soft:#DEEBDF;
+    --warn:#A26421;
+    --warn-soft:#F0E3CE;
+    --danger:#A5433B;
+    --danger-soft:#F1DEDB;
+    --code-bg:#EDE7D6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15171B;
+      --surface:#1C1F24;
+      --surface-alt:#20242A;
+      --line:#33363D;
+      --ink:#E9E6DD;
+      --ink-muted:#9C9A90;
+      --accent:#8AA9D6;
+      --accent-soft:#243349;
+      --ok:#7FBE8C;
+      --ok-soft:#20302A;
+      --warn:#D9A257;
+      --warn-soft:#332A1C;
+      --danger:#D98781;
+      --danger-soft:#332020;
+      --code-bg:#20242A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15171B;
+    --surface:#1C1F24;
+    --surface-alt:#20242A;
+    --line:#33363D;
+    --ink:#E9E6DD;
+    --ink-muted:#9C9A90;
+    --accent:#8AA9D6;
+    --accent-soft:#243349;
+    --ok:#7FBE8C;
+    --ok-soft:#20302A;
+    --warn:#D9A257;
+    --warn-soft:#332A1C;
+    --danger:#D98781;
+    --danger-soft:#332020;
+    --code-bg:#20242A;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.6;
+  }
+  h1,h2,h3,h4{
+    font-family:"IBM Plex Serif", Georgia, serif;
+    font-weight:600;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  code, .mono, .field-name, .path{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+  a{color:var(--accent);}
+  ::selection{background:var(--accent-soft);}
+
+  .layout{
+    display:grid;
+    grid-template-columns:250px minmax(0,1fr);
+    max-width:1180px;
+    margin:0 auto;
+    gap:0;
+  }
+  .sidebar{
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+    padding:28px 18px 40px 28px;
+    border-right:1px solid var(--line);
+  }
+  .brand{
+    font-family:"IBM Plex Serif";
+    font-weight:600;
+    font-size:1.05rem;
+    margin-bottom:2px;
+  }
+  .brand-sub{
+    font-size:.72rem;
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:22px;
+  }
+  .nav-group{margin-bottom:18px;}
+  .nav-group-label{
+    font-size:.68rem;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    color:var(--ink-muted);
+    margin-bottom:6px;
+    display:block;
+  }
+  .nav-group a{
+    display:block;
+    font-size:.86rem;
+    color:var(--ink);
+    text-decoration:none;
+    padding:5px 8px;
+    border-radius:5px;
+    border-left:2px solid transparent;
+  }
+  .nav-group a:hover{background:var(--surface-alt);}
+  .nav-group a.active{
+    color:var(--accent);
+    border-left:2px solid var(--accent);
+    background:var(--accent-soft);
+    font-weight:500;
+  }
+
+  .main{padding:36px 40px 80px;min-width:0;}
+  .max-prose{max-width:700px;}
+
+  header.hero{margin-bottom:40px;}
+  header.hero .eyebrow{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--accent);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  header.hero h1{font-size:2.1rem;margin-bottom:8px;}
+  header.hero p{color:var(--ink-muted);font-size:1rem;max-width:640px;margin:0 0 26px;}
+
+  .stage-tracker{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0;
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .stage{
+    flex:1 1 140px;
+    padding:14px 16px;
+    border-right:1px solid var(--line);
+    position:relative;
+  }
+  .stage:last-child{border-right:none;}
+  .stage .num{
+    font-family:"IBM Plex Mono";
+    font-size:.72rem;
+    color:var(--accent);
+    display:block;
+    margin-bottom:4px;
+  }
+  .stage .name{font-size:.86rem;font-weight:500;}
+  .stage .screens{font-size:.72rem;color:var(--ink-muted);margin-top:3px;display:block;}
+
+  section{margin-bottom:56px;scroll-margin-top:20px;}
+  section h2{font-size:1.5rem;margin-bottom:6px;}
+  section > .section-sub{color:var(--ink-muted);font-size:.92rem;margin-bottom:22px;max-width:640px;}
+
+  table{border-collapse:collapse;width:100%;font-size:.86rem;}
+  table.fields{margin:14px 0 6px;}
+  table.fields th{
+    text-align:left;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-muted);
+    border-bottom:1px solid var(--line);
+    padding:6px 10px 6px 0;
+    font-weight:600;
+  }
+  table.fields td{
+    padding:8px 10px 8px 0;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  table.fields tr:last-child td{border-bottom:none;}
+  table.fields .field-name{color:var(--accent);font-size:.83rem;}
+  table.fields .type{color:var(--ink-muted);font-size:.78rem;white-space:nowrap;}
+
+  .table-scroll{overflow-x:auto;}
+
+  .screen-tag{
+    display:inline-block;
+    font-family:"IBM Plex Mono";
+    font-size:.68rem;
+    background:var(--surface-alt);
+    color:var(--ink-muted);
+    border:1px solid var(--line);
+    padding:2px 7px;
+    border-radius:20px;
+    margin:0 4px 4px 0;
+  }
+
+  .endpoint{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 22px 22px;
+    margin-bottom:18px;
+  }
+  .endpoint-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .method{
+    font-family:"IBM Plex Mono";
+    font-size:.72rem;
+    font-weight:600;
+    padding:3px 8px;
+    border-radius:5px;
+    letter-spacing:.03em;
+  }
+  .method.get{background:var(--accent-soft);color:var(--accent);}
+  .method.post{background:var(--ok-soft);color:var(--ok);}
+  .method.patch, .method.put{background:var(--warn-soft);color:var(--warn);}
+  .path{font-size:.94rem;}
+  .endpoint-purpose{font-size:.86rem;color:var(--ink-muted);margin:6px 0 4px;}
+  .endpoint h4{
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--ink-muted);
+    margin:16px 0 2px;
+    font-family:"IBM Plex Sans";
+    font-weight:600;
+  }
+  pre{
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+    overflow-x:auto;
+    font-size:.8rem;
+    margin:6px 0 0;
+  }
+  .note{
+    background:var(--accent-soft);
+    border-left:3px solid var(--accent);
+    padding:10px 14px;
+    border-radius:0 6px 6px 0;
+    font-size:.85rem;
+    margin:14px 0;
+  }
+  .rule-list{margin:10px 0 0;padding-left:20px;font-size:.87rem;}
+  .rule-list li{margin-bottom:6px;}
+
+  .actors{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    gap:10px;
+    margin:18px 0 8px;
+  }
+  .actor-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .actor-card .role{font-weight:600;font-size:.88rem;}
+  .actor-card .access{font-size:.72rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;margin:2px 0 6px;}
+  .actor-card .screens{font-size:.78rem;color:var(--ink-muted);}
+
+  .stage-block{
+    border-left:2px solid var(--line);
+    padding-left:20px;
+    margin-bottom:26px;
+    position:relative;
+  }
+  .stage-block::before{
+    content:"";
+    position:absolute;
+    left:-5px;
+    top:4px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--accent);
+  }
+  .stage-block h3{font-size:1.05rem;margin-bottom:6px;}
+  .stage-block p{font-size:.9rem;margin:6px 0;}
+
+  .mermaid{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:24px 0 4px;
+    font-size:.8rem;
+    color:var(--ink-muted);
+    max-width:700px;
+  }
+
+  .menu-toggle{display:none;}
+
+  @media (max-width: 880px){
+    .layout{grid-template-columns:1fr;}
+    .sidebar{
+      position:relative;
+      height:auto;
+      border-right:none;
+      border-bottom:1px solid var(--line);
+      padding:20px 20px 12px;
+    }
+    .main{padding:28px 20px 60px;}
+  }
+</style>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">DealFlow360</div>
+    <div class="brand-sub">Order Flow &amp; API Reference</div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Overview</span>
+      <a href="#lifecycle">Order Lifecycle</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">API Reference</span>
+      <a href="#auth">Auth</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#quotations">Quotations</a>
+      <a href="#approvals">Approvals</a>
+      <a href="#fulfillment">Fulfillment</a>
+      <a href="#subscriptions">Subscriptions &amp; Billing</a>
+      <a href="#portal">Customer Portal</a>
+      <a href="#invoices">Invoices</a>
+      <a href="#dealhealth">Deal Health</a>
+      <a href="#reporting">Admin &amp; Reporting</a>
+      <a href="#products">Product Catalog</a>
+      <a href="#discounts">Discount Config</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Notes</span>
+      <a href="#implementation">Frontend notes</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <div class="eyebrow">Quote → Cash · Internal Reference</div>
+      <h1>Order Lifecycle &amp; API Reference</h1>
+      <p>How a deal moves from first quote to final payment across DealFlow360, and the exact endpoint + field contract behind every screen in the product.</p>
+
+      <div class="stage-tracker">
+        <div class="stage"><span class="num">01</span><span class="name">Quote creation</span><span class="screens">Screens 2–4, 16–18</span></div>
+        <div class="stage"><span class="num">02</span><span class="name">Approval routing</span><span class="screens">Screens 5–6</span></div>
+        <div class="stage"><span class="num">03</span><span class="name">Negotiation</span><span class="screens">Screen 11</span></div>
+        <div class="stage"><span class="num">04</span><span class="name">Fulfillment</span><span class="screens">Screens 7–8</span></div>
+        <div class="stage"><span class="num">05</span><span class="name">Subscriptions</span><span class="screens">Screens 9–10</span></div>
+        <div class="stage"><span class="num">06</span><span class="name">Invoice &amp; payment</span><span class="screens">Screens 12–13</span></div>
+      </div>
+    </header>
+
+    <section id="lifecycle">
+      <h2>Order Lifecycle</h2>
+      <p class="section-sub">A quotation is one object that carries a status through every stage below. Deal Health (Screen 14) and Reporting (Screen 15) watch it the whole way; the Product Catalog and Discount Tiers (Screens 16–18) are the master data every stage reads from.</p>
+
+      <h4 style="margin-top:0">Actors</h4>
+      <div class="actors">
+        <div class="actor-card"><div class="role">Sales Rep</div><div class="access">Internal</div><div class="screens">Dashboard, Quotations, Subscriptions</div></div>
+        <div class="actor-card"><div class="role">Sales Manager</div><div class="access">Internal</div><div class="screens">Approvals (L1), Deal Health</div></div>
+        <div class="actor-card"><div class="role">Finance</div><div class="access">Internal</div><div class="screens">Approvals (L2), Invoices, Billing</div></div>
+        <div class="actor-card"><div class="role">Warehouse / Ops</div><div class="access">Internal</div><div class="screens">Fulfillment</div></div>
+        <div class="actor-card"><div class="role">Admin</div><div class="access">Internal</div><div class="screens">Product Catalog, Discount Setup, Reporting</div></div>
+        <div class="actor-card"><div class="role">Customer</div><div class="access">External · Portal</div><div class="screens">Negotiation, read-only invoices</div></div>
+      </div>
+
+      <h4>State machine</h4>
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> PendingApproval: Submit for Approval
+    PendingApproval --> Approved: Approve
+    PendingApproval --> ReturnedForRevision: Return for Revision
+    PendingApproval --> Rejected: Reject
+    ReturnedForRevision --> Draft: Rep edits quote
+    Approved --> Negotiation: Customer requests changes
+    Negotiation --> PendingApproval: Terms exceed threshold
+    Negotiation --> Confirmed: Customer confirms
+    Approved --> Confirmed: Customer accepts as-is
+    Confirmed --> Fulfillment
+    Fulfillment --> Shipped: Split accepted
+    Shipped --> Invoiced: Invoice generated
+    Invoiced --> Paid: Payment recorded
+    Rejected --> [*]
+    Paid --> [*]
+    Confirmed --> SubscriptionActive: Recurring lines detected
+    SubscriptionActive --> SubscriptionPaused: Manager pauses
+    SubscriptionActive --> SubscriptionCancelled: Cancel
+    SubscriptionPaused --> SubscriptionActive: Resume
+      </pre>
+
+      <h4>Stage by stage</h4>
+
+      <div class="stage-block">
+        <h3>1 · Quote creation</h3>
+        <p>Rep opens the Sales Dashboard, starts a quotation, and adds lines. Every discount is validated <strong>live</strong> against the tier/category ceilings from Discount Config — not only at submit. Upsell suggestions pull from the Product Catalog.</p>
+        <p><strong>Save Draft</strong> keeps status <code>draft</code>. <strong>Submit for Approval</strong> moves to <code>pending_approval</code> only if a line or blended discount exceeds its ceiling — otherwise the quote can jump straight to <code>confirmed</code>.</p>
+      </div>
+
+      <div class="stage-block">
+        <h3>2 · Approval routing</h3>
+        <p>Flagged quotes list in Approvals with blended risk and current stage. Approval Detail shows exactly which line broke which ceiling, a stepper (<code>Submitted → Sales Manager → Finance → Confirmed</code>), and a full audit history.</p>
+        <p>Routing level comes from the blended risk score against the escalation table: within-limit needs no approval, medium risk needs Sales Manager, high risk needs Sales Manager <em>then</em> Finance. Every approve / return / reject is logged with actor, timestamp, and reason.</p>
+      </div>
+
+      <div class="stage-block">
+        <h3>3 · Customer negotiation</h3>
+        <p>An approved quote appears in the customer's portal. They can comment per line, propose a counter-discount and delivery date, then submit or confirm outright.</p>
+        <p><strong>Rule:</strong> if the final negotiated terms still fit the approved thresholds, confirming moves straight to <code>confirmed</code>. If they exceed the threshold again, the quote automatically re-enters approval rather than confirming.</p>
+      </div>
+
+      <div class="stage-block">
+        <h3>4 · Fulfillment</h3>
+        <p>Confirmed orders appear against live per-warehouse stock. The system suggests a warehouse split when one warehouse can't cover the order; ops accepts it or overrides manually. A restock at a short warehouse auto-prompts consolidating the remaining backorder.</p>
+      </div>
+
+      <div class="stage-block">
+        <h3>5 · Subscriptions &amp; billing</h3>
+        <p>Recurring lines on the original order (Care Plan, Support SLA) spin off a subscription that runs independently of the one-time order's fulfillment. Billing Detail shows both the originating one-time lines and the ongoing recurring lines.</p>
+      </div>
+
+      <div class="stage-block">
+        <h3>6 · Invoicing &amp; payment</h3>
+        <p>Shipments and billing cycles each generate an invoice. Partial deliveries produce partial invoices, reconciled against what actually shipped rather than the full order. Recording a payment closes the loop.</p>
+      </div>
+
+      <h4>Screen → stage map</h4>
+      <div class="table-scroll">
+      <table class="fields">
+        <tr><th>#</th><th>Screen</th><th>Stage</th></tr>
+        <tr><td class="mono">1</td><td>Login / Signup</td><td>Entry</td></tr>
+        <tr><td class="mono">2</td><td>Sales Dashboard</td><td>Entry</td></tr>
+        <tr><td class="mono">3–4</td><td>Quotations List / Detail</td><td>1 · Quote creation</td></tr>
+        <tr><td class="mono">5–6</td><td>Approvals List / Detail</td><td>2 · Approval routing</td></tr>
+        <tr><td class="mono">7–8</td><td>Fulfillment List / Detail</td><td>4 · Fulfillment</td></tr>
+        <tr><td class="mono">9–10</td><td>Subscriptions List / Billing Detail</td><td>5 · Subscriptions</td></tr>
+        <tr><td class="mono">11</td><td>Customer Portal</td><td>3 · Negotiation</td></tr>
+        <tr><td class="mono">12–13</td><td>Invoices List / Detail</td><td>6 · Invoice &amp; payment</td></tr>
+        <tr><td class="mono">14</td><td>Deal Health Dashboard</td><td>Cross-cutting</td></tr>
+        <tr><td class="mono">15</td><td>Admin / Reporting Dashboard</td><td>Cross-cutting</td></tr>
+        <tr><td class="mono">16–18</td><td>Product Catalog / Discount Config</td><td>Master data</td></tr>
+      </table>
+      </div>
+    </section>
+
+    <!-- ================= API REFERENCE ================= -->
+
+    <section id="auth">
+      <h2>Auth</h2>
+      <p class="section-sub">Screen 1 — Login / Signup</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/auth/login</span></div>
+        <p class="endpoint-purpose">Request</p>
+        <pre>{ "email": "string", "password": "string", "team_id": "string | null" }</pre>
+        <h4>Response — needed on frontend</h4>
+        <table class="fields">
+          <tr><td class="field-name">token</td><td class="type">string</td><td>Session auth</td></tr>
+          <tr><td class="field-name">user.id, user.name, user.role</td><td class="type">string</td><td>Header/avatar, role-gated nav</td></tr>
+          <tr><td class="field-name">user.available_teams[]</td><td class="type">array</td><td>Team/company selector — shown only if user belongs to &gt;1 team</td></tr>
+          <tr><td class="field-name">redirect</td><td class="type">enum</td><td><code>dashboard</code> (internal) or <code>customer_portal</code> (customer)</td></tr>
+        </table>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/auth/signup</span></div>
+        <p class="endpoint-purpose">Request: <code>{ name, email, password, account_type: "internal" | "customer" }</code> → same response shape as login (auto-login). Validation errors return <code>422</code> with <code>{ field, message }[]</code> for inline field errors.</p>
+      </div>
+    </section>
+
+    <section id="dashboard">
+      <h2>Dashboard</h2>
+      <p class="section-sub">Screen 2 — Sales Dashboard</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/dashboard/summary</span></div>
+        <h4>Response — needed on frontend</h4>
+        <table class="fields">
+          <tr><td class="field-name">pending_approvals_count</td><td class="type">int</td><td>"Pending Approvals" tile</td></tr>
+          <tr><td class="field-name">open_quotations_count</td><td class="type">int</td><td>"Open Quotations" tile</td></tr>
+          <tr><td class="field-name">at_risk_deals[]</td><td class="type">{id, customer_name, reason}</td><td>"At Risk Deals" tile</td></tr>
+          <tr><td class="field-name">recent_activity[]</td><td class="type">{id, timestamp, actor_name, message, entity_type, entity_id}</td><td>Activity feed; entity fields deep-link to the source record</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="quotations">
+      <h2>Quotations</h2>
+      <p class="section-sub">Screens 3–4 — Quotations List &amp; Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/quotations</span><span class="screen-tag">Screen 3</span></div>
+        <p class="endpoint-purpose">Query: <code>status</code> (draft, pending_approval, approved, negotiation, confirmed), <code>q</code>, <code>view</code> (kanban/table).</p>
+        <h4>Response — needed (list)</h4>
+        <table class="fields">
+          <tr><td class="field-name">id, code</td><td class="type">string</td><td>e.g. <code>Q-1042</code></td></tr>
+          <tr><td class="field-name">customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">amount</td><td class="type">decimal</td><td></td></tr>
+          <tr><td class="field-name">status</td><td class="type">enum</td><td>Groups rows into the 5 kanban columns</td></tr>
+          <tr><td class="field-name">updated_at</td><td class="type">datetime</td><td></td></tr>
+        </table>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/quotations</span></div>
+        <p class="endpoint-purpose">Creates a blank draft. Request: <code>{ customer_id, price_list_id }</code> → returns <code>{ id, code }</code>; frontend redirects into Quotation Detail.</p>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/quotations/{id}</span><span class="screen-tag">Screen 4</span></div>
+        <h4>Response — needed (detail)</h4>
+        <table class="fields">
+          <tr><td class="field-name">code, status</td><td class="type">string</td><td>Header</td></tr>
+          <tr><td class="field-name">customer</td><td class="type">{id, name}</td><td>Customer field</td></tr>
+          <tr><td class="field-name">price_list</td><td class="type">{id, name}</td><td>Price List field</td></tr>
+          <tr><td class="field-name">lines[]</td><td class="type">{id, product_id, product_name, qty, unit_price, discount_pct, discount_limit_pct, list_price, line_status}</td><td>Line item table — <code>discount_limit_pct</code> drives the live over-limit warning as the rep types</td></tr>
+          <tr><td class="field-name">upsell_suggestions[]</td><td class="type">{product_id, name, margin_note}</td><td>Upsell &amp; cross-sell panel</td></tr>
+          <tr><td class="field-name">requires_approval</td><td class="type">bool</td><td>Banner: quote will route to approval</td></tr>
+        </table>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method patch">PATCH</span><span class="path">/quotations/{id}</span></div>
+        <p class="endpoint-purpose"><strong>Save Draft.</strong> Body mirrors <code>lines[]</code> above (add/update/remove). Server re-checks every <code>discount_pct</code> against tier/category ceiling on each save and returns a fresh <code>requires_approval</code>.</p>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/quotations/{id}/submit</span></div>
+        <p class="endpoint-purpose"><strong>Submit for Approval.</strong> No body. Response: <code>{ status: "pending_approval" | "confirmed" }</code>.</p>
+      </div>
+    </section>
+
+    <section id="approvals">
+      <h2>Approvals</h2>
+      <p class="section-sub">Screens 5–6 — Approvals List &amp; Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/approvals</span><span class="screen-tag">Screen 5</span></div>
+        <p class="endpoint-purpose">Query: <code>filter</code> (pending / returned / approved).</p>
+        <table class="fields">
+          <tr><td class="field-name">quotation_code, customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">amount</td><td class="type">decimal</td><td></td></tr>
+          <tr><td class="field-name">blended_risk</td><td class="type">enum: low/medium/high</td><td></td></tr>
+          <tr><td class="field-name">stage</td><td class="type">enum</td><td>submitted / sales_manager / finance / confirmed</td></tr>
+          <tr><td class="field-name">assigned_to</td><td class="type">string</td><td></td></tr>
+        </table>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/approvals/{id}</span><span class="screen-tag">Screen 6</span></div>
+        <h4>Response — needed (detail)</h4>
+        <table class="fields">
+          <tr><td class="field-name">revenue_size, customer_tier</td><td class="type">enum / string</td><td>Header badges</td></tr>
+          <tr><td class="field-name">flag_reasons[]</td><td class="type">{line_name, discount_given_pct, limit_allowed_pct, over_by_pts, category}</td><td>"Why This Quote Was Flagged" table</td></tr>
+          <tr><td class="field-name">stage</td><td class="type">enum</td><td>Stepper position</td></tr>
+          <tr><td class="field-name">history[]</td><td class="type">{actor_name, action, date, note}</td><td>Audit trail table</td></tr>
+        </table>
+        <div class="note">Every approve / return / reject persists <code>actor_id, action, timestamp, note</code> server-side, regardless of what the client sends — this is the compliance requirement from the Discount Config screen.</div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/approvals/{id}/approve</span></div>
+        <p class="endpoint-purpose">Body: <code>{ note?: string }</code>. Advances stage; on the last required level, quotation status → <code>approved</code>.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/approvals/{id}/return</span></div>
+        <p class="endpoint-purpose">Body: <code>{ note: string }</code> (required). Quotation status → <code>draft</code>, routed back to the rep.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/approvals/{id}/reject</span></div>
+        <p class="endpoint-purpose">Body: <code>{ note: string }</code>. Terminal — quotation status → <code>rejected</code>.</p>
+      </div>
+    </section>
+
+    <section id="fulfillment">
+      <h2>Fulfillment</h2>
+      <p class="section-sub">Screens 7–8 — Fulfillment List &amp; Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/fulfillment/stock</span></div>
+        <table class="fields">
+          <tr><td class="field-name">product_name, warehouse_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">in_stock, reserved, available</td><td class="type">int</td><td>Stock table on Screen 7</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/fulfillment/orders</span></div>
+        <table class="fields">
+          <tr><td class="field-name">order_code, customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">status</td><td class="type">enum: split_pending/backorder/ready</td><td></td></tr>
+          <tr><td class="field-name">warehouses[]</td><td class="type">string[]</td><td>"Orders Awaiting Fulfillment" table</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/fulfillment/orders/{id}</span><span class="screen-tag">Screen 8</span></div>
+        <table class="fields">
+          <tr><td class="field-name">order_code, customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">suggested_split[]</td><td class="type">{warehouse_name, qty, est_shipment_date, cost}</td><td>Split table</td></tr>
+          <tr><td class="field-name">backorder_notice</td><td class="type">{warehouse_name, restock_eta} | null</td><td>Powers the auto "Consolidate Remaining Backorder" banner</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/fulfillment/orders/{id}/accept-split</span></div>
+        <p class="endpoint-purpose">No body — accepts the server-suggested split; order advances toward <code>shipped</code>.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/fulfillment/orders/{id}/override</span></div>
+        <p class="endpoint-purpose">Body: <code>{ splits: [{ warehouse_id, qty }] }</code> — Manual Override.</p>
+      </div>
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions &amp; Billing</h2>
+      <p class="section-sub">Screens 9–10 — Subscriptions List &amp; Billing Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/subscriptions</span><span class="screen-tag">Screen 9</span></div>
+        <p class="endpoint-purpose">Query: <code>status</code> (active / paused / cancelled).</p>
+        <table class="fields">
+          <tr><td class="field-name">customer_name, plan_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">cycle, next_bill_date</td><td class="type">string / date</td><td></td></tr>
+          <tr><td class="field-name">status</td><td class="type">enum</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/subscriptions</span></div>
+        <p class="endpoint-purpose">Admin's <strong>+ New Plan</strong>. Body: <code>{ customer_id, plan_id, cycle }</code>.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/subscriptions/{id}/billing</span><span class="screen-tag">Screen 10</span></div>
+        <table class="fields">
+          <tr><td class="field-name">customer_name, plan_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">one_time_lines[]</td><td class="type">{product_name, qty, amount}</td><td>"From originating order" table</td></tr>
+          <tr><td class="field-name">recurring_lines[]</td><td class="type">{plan_name, cycle, next_bill_date, amount}</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/subscriptions/{id}/modify</span></div>
+        <p class="endpoint-purpose">Body: <code>{ plan_id?, cycle? }</code>.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/subscriptions/{id}/cancel</span></div>
+        <p class="endpoint-purpose">No body — status → <code>cancelled</code>.</p>
+      </div>
+    </section>
+
+    <section id="portal">
+      <h2>Customer Portal</h2>
+      <p class="section-sub">Screen 11 — Negotiation. Auth token restricts every call to the customer's own company.</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/portal/quotations</span></div>
+        <table class="fields">
+          <tr><td class="field-name">code, status, amount, updated_at</td><td class="type">mixed</td><td>"My Quotes" tab</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/portal/quotations/{id}</span></div>
+        <table class="fields">
+          <tr><td class="field-name">lines[]</td><td class="type">{product_name, comment}</td><td>Per-line comment thread</td></tr>
+          <tr><td class="field-name">counter_discount_pct</td><td class="type">decimal | null</td><td>Pre-filled if a request is pending</td></tr>
+          <tr><td class="field-name">requested_delivery_date</td><td class="type">date | null</td><td></td></tr>
+          <tr><td class="field-name">negotiation_status</td><td class="type">enum: none/pending/confirmed</td><td>Enables/disables Submit &amp; Confirm buttons</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/portal/quotations/{id}/negotiate</span></div>
+        <p class="endpoint-purpose">Body: <code>{ counter_discount_pct?, requested_delivery_date?, line_comments?: [{line_id, comment}] }</code> — Submit Request.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/portal/quotations/{id}/confirm</span></div>
+        <p class="endpoint-purpose">No body. Response: <code>{ status: "confirmed" }</code> or <code>{ status: "pending_approval", reason: "threshold_exceeded" }</code> — show a message and route back into approval on the latter.</p>
+      </div>
+    </section>
+
+    <section id="invoices">
+      <h2>Invoices</h2>
+      <p class="section-sub">Screens 12–13 — Invoices List &amp; Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/invoices</span><span class="screen-tag">Screen 12</span></div>
+        <p class="endpoint-purpose">Query: <code>status</code> (unpaid / paid).</p>
+        <table class="fields">
+          <tr><td class="field-name">invoice_code, customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">amount, status, due_date</td><td class="type">mixed</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/invoices/{id}</span><span class="screen-tag">Screen 13</span></div>
+        <table class="fields">
+          <tr><td class="field-name">fulfillment_stage</td><td class="type">enum</td><td>order_confirmed/shipped/invoiced/paid — drives the stepper</td></tr>
+          <tr><td class="field-name">lines[]</td><td class="type">{invoice_code, type: shipping|recurring, amount, status, due_date}</td><td></td></tr>
+          <tr><td class="field-name">partial_notice</td><td class="type">{delivered_pct, days_waiting} | null</td><td>Powers the partial-invoicing banner</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/invoices/{id}/record-payment</span></div>
+        <p class="endpoint-purpose">Body: <code>{ amount, method?, reference? }</code> → status <code>paid</code>.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/invoices/{id}/send-reminder</span></div>
+        <p class="endpoint-purpose">No body — enabled only when unpaid and past due.</p>
+      </div>
+    </section>
+
+    <section id="dealhealth">
+      <h2>Deal Health</h2>
+      <p class="section-sub">Screen 14 — Deal Health &amp; Anomaly Dashboard</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/deal-health/summary</span></div>
+        <table class="fields">
+          <tr><td class="field-name">stalled_deals_count, discount_anomalies_count, delivery_slippage_count</td><td class="type">int</td><td>The three tiles</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/deal-health/flags</span></div>
+        <table class="fields">
+          <tr><td class="field-name">customer_name</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">issue_type</td><td class="type">enum: idle/discount_anomaly/slippage</td><td></td></tr>
+          <tr><td class="field-name">detail</td><td class="type">string</td><td>e.g. "Idle 6 days", "22% vs avg 8%"</td></tr>
+          <tr><td class="field-name">flagged_at, action_taken</td><td class="type">datetime / string</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/deal-health/flags/{id}/escalate</span></div>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/deal-health/flags/{id}/nudge</span></div>
+        <p class="endpoint-purpose">Both no-body — set <code>action_taken</code> and notify the assigned rep/manager.</p>
+      </div>
+    </section>
+
+    <section id="reporting">
+      <h2>Admin &amp; Reporting</h2>
+      <p class="section-sub">Screen 15 — Admin / Reporting Dashboard</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/reports/summary</span></div>
+        <p class="endpoint-purpose">Query: <code>period, sales_rep_id?, approval_status?, product_id?</code>.</p>
+        <table class="fields">
+          <tr><td class="field-name">quotes_created_count</td><td class="type">int</td><td></td></tr>
+          <tr><td class="field-name">avg_approval_time_hours</td><td class="type">decimal</td><td></td></tr>
+          <tr><td class="field-name">top_upsell_product_name</td><td class="type">string</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/reports/export</span></div>
+        <p class="endpoint-purpose">Query: <code>format=pdf|xlsx</code>. Returns a binary file stream — Export PDF / Export XLS trigger a direct download using the current filter state.</p>
+      </div>
+    </section>
+
+    <section id="products">
+      <h2>Product Catalog</h2>
+      <p class="section-sub">Screens 16–17 — Product Catalog &amp; Product Detail</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/products</span><span class="screen-tag">Screen 16</span></div>
+        <table class="fields">
+          <tr><td class="field-name">name, category</td><td class="type">string</td><td></td></tr>
+          <tr><td class="field-name">variant_count, price, unit, tax_pct, status</td><td class="type">mixed</td><td></td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/products/summary</span></div>
+        <table class="fields">
+          <tr><td class="field-name">total_products_count, pricelist_count, variant_count</td><td class="type">int</td><td>The three tiles</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/products/{id}</span><span class="screen-tag">Screen 17</span></div>
+        <table class="fields">
+          <tr><td class="field-name">name, category, price, unit, description, tax_pct</td><td class="type">scalar</td><td>General Info</td></tr>
+          <tr><td class="field-name">is_subscription</td><td class="type">bool</td><td>Subscription Yes/No toggle</td></tr>
+          <tr><td class="field-name">recurring_cycle</td><td class="type">enum: monthly/quarterly/yearly | null</td><td>Only relevant if <code>is_subscription</code></td></tr>
+          <tr><td class="field-name">variants[]</td><td class="type">{attribute, values[], extra_price}</td><td>Variants table</td></tr>
+          <tr><td class="field-name">pricelists[]</td><td class="type">{tier, currency, price_rule}</td><td>Pricelists table</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method post">POST</span><span class="path">/products</span></div>
+        <div class="endpoint-head" style="margin-top:8px"><span class="method patch">PATCH</span><span class="path">/products/{id}</span></div>
+        <p class="endpoint-purpose">Body mirrors the detail shape above — new product / edit-save.</p>
+      </div>
+    </section>
+
+    <section id="discounts">
+      <h2>Discount Config</h2>
+      <p class="section-sub">Screen 18 — Discount Tiers &amp; Approval Chain Setup</p>
+
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method get">GET</span><span class="path">/config/discount-tiers</span></div>
+        <table class="fields">
+          <tr><td class="field-name">tier_ceilings[]</td><td class="type">{tier, max_discount_pct}</td><td></td></tr>
+          <tr><td class="field-name">category_ceilings[]</td><td class="type">{category, max_discount_pct}</td><td></td></tr>
+          <tr><td class="field-name">escalation_rules[]</td><td class="type">{discount_range_label, approval_level}</td><td><code>approval_level</code>: none / sales_manager / sales_manager_then_finance</td></tr>
+        </table>
+        <p class="endpoint-purpose">This is the config every quotation and approval calculation reads — <code>discount_limit_pct</code> on Quotation Detail, <code>flag_reasons</code> and routing on Approval Detail.</p>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-head"><span class="method put">PUT</span><span class="path">/config/discount-tiers</span></div>
+        <p class="endpoint-purpose"><strong>Save configuration</strong> — replaces the three arrays above in one call, admin-only.</p>
+      </div>
+    </section>
+
+    <section id="implementation">
+      <h2>Frontend implementation notes</h2>
+      <ul class="rule-list">
+        <li><strong>List vs. detail payloads</strong> — keep list endpoints thin (only the columns actually rendered); never return <code>lines[]</code> / <code>history[]</code> on list calls, fetch detail on row click.</li>
+        <li><strong>Shared status vocabulary</strong> — one enum per domain server-side (quotations, approvals, fulfillment, invoices); map to badge colors on the frontend, never infer status from other fields.</li>
+        <li><strong>Every button-triggered mutation</strong> — submit, approve, return, reject, accept-split, override, modify, cancel, negotiate, confirm, record-payment, send-reminder, escalate, nudge — returns the updated parent resource (or at least its new <code>status</code>) so the UI updates in place without a full refetch.</li>
+        <li><strong>Audit logging</strong> — approval actions and discount-config saves persist actor + timestamp + reason server-side regardless of client input, per the Screen 18 compliance requirement.</li>
+      </ul>
+    </section>
+
+    <footer>
+      Mirrors <code>docs/ORDERS_FLOW.md</code> and <code>docs/API_DOCS.md</code> in the project repo.
+    </footer>
+  </main>
+</div>
+
+<script>
+  (function(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav-group a'));
+    var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if(!('IntersectionObserver' in window)) return;
+    var byId = {};
+    links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var link = byId[entry.target.id];
+        if(!link) return;
+        if(entry.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    sections.forEach(function(s){ observer.observe(s); });
+  })();
+</script>
