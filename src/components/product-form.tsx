@@ -46,15 +46,22 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
   const [product, setProduct] = useState<ProductDetail>(initialProduct);
   const [quantityOnHand, setQuantityOnHand] = useState("");
   const [categoryId, setCategoryId] = useState(initialProduct.categoryId ?? "");
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Populates the Category dropdown below (Catalog module, GET /api/categories) for both create
+  // and edit — previously this only ran on create, to silently auto-pick categories[0] into a
+  // categoryId that had no visible control, so a product's category could never actually be
+  // changed from this screen.
   useEffect(() => {
-    if (categoryId || mode !== "create") return;
     apiRequest<{ id: string; name: string }[]>("/api/categories")
-      .then((categories) => setCategoryId(categories[0]?.id ?? ""))
+      .then((fetched) => {
+        setCategories(fetched);
+        setCategoryId((current) => current || fetched[0]?.id || "");
+      })
       .catch((err) => setError(err instanceof ApiClientError ? err.message : "Failed to load categories."));
-  }, [categoryId, mode]);
+  }, []);
 
   function updateField<K extends keyof ProductDetail>(key: K, value: ProductDetail[K]) {
     setProduct((prev) => ({ ...prev, [key]: value }));
@@ -87,20 +94,14 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
     setSaving(true);
     setError(null);
     try {
-      let selectedCategoryId = categoryId;
-      if (mode === "create" && !selectedCategoryId) {
-        const categories = await apiRequest<{ id: string; name: string }[]>("/api/categories");
-        selectedCategoryId = categories[0]?.id ?? "";
-        setCategoryId(selectedCategoryId);
-      }
-      if (mode === "create" && (!selectedCategoryId || !product.sku?.trim())) {
+      if (mode === "create" && (!categoryId || !product.sku?.trim())) {
         throw new ApiClientError({
           code: "VALIDATION_ERROR",
           message: "SKU and a product category are required.",
         });
       }
       const payload = {
-        ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+        ...(categoryId ? { categoryId } : {}),
         ...(product.sku?.trim() ? { sku: product.sku.trim() } : {}),
         name: product.name,
         price: product.price,
@@ -170,10 +171,26 @@ export function ProductForm({ mode, productId, initialProduct }: ProductFormProp
                 />
               </Field>
               <Field label="Category">
-                <Input
-                  value={product.category}
-                  onChange={(e) => updateField("category", e.target.value)}
-                />
+                <Select
+                  value={categoryId || undefined}
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    setCategoryId(value);
+                    const name = categories.find((c) => c.id === value)?.name ?? "";
+                    updateField("category", name);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Price">
                 <Input

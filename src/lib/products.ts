@@ -62,3 +62,97 @@ export const EMPTY_PRODUCT: ProductDetail = {
   variants: [],
   pricelists: [],
 };
+
+/**
+ * The actual wire shape GET /api/products and GET /api/products/:id return — see
+ * src/modules/catalog/application/types.ts ProductDto. Decimal columns (price, costPrice,
+ * taxPct, extraPrice) serialize as strings (Prisma Decimal -> JSON), category is the full
+ * {id, name} relation, and variants are one row per attribute+value pair, not grouped.
+ * The view types above are what the existing screens/components render; these mappers are the
+ * one place that translates between the two so no component has to know about Decimal strings.
+ */
+export type ProductDto = {
+  id: string;
+  category: { id: string; name: string };
+  sku: string;
+  name: string;
+  price: string;
+  costPrice: string;
+  unit: string;
+  taxPct: string;
+  description: string | null;
+  isSubscription: boolean;
+  recurringCycle: "MONTHLY" | "QUARTERLY" | "YEARLY" | null;
+  isActive: boolean;
+  variants: Array<{
+    id: string;
+    attribute: string;
+    value: string;
+    extraPrice: string;
+    sku: string | null;
+    isActive: boolean;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function mapProductToListItem(dto: ProductDto): ProductListItem {
+  return {
+    id: dto.id,
+    name: dto.name,
+    category: dto.category.name,
+    variant_count: dto.variants.length,
+    price: Number(dto.price),
+    unit: dto.unit,
+    tax_pct: Number(dto.taxPct),
+    status: dto.isActive ? "Active" : "Inactive",
+  };
+}
+
+/**
+ * Groups the backend's flat per-value variant rows back into one row per attribute, the shape
+ * product-form.tsx's "comma separated values" editor expects. This is a lossless round-trip for
+ * every product created through that form (it always writes one extraPrice per attribute group,
+ * fanned out to each value) — it only loses per-value price differences if a product's variants
+ * were seeded with different extraPrice per value under the same attribute, which nothing in
+ * this app currently does.
+ */
+function groupVariants(variants: ProductDto["variants"]): ProductVariant[] {
+  const byAttribute = new Map<string, ProductVariant>();
+  for (const v of variants) {
+    const existing = byAttribute.get(v.attribute);
+    if (existing) {
+      existing.values.push(v.value);
+    } else {
+      byAttribute.set(v.attribute, {
+        attribute: v.attribute,
+        values: [v.value],
+        extra_price: Number(v.extraPrice),
+      });
+    }
+  }
+  return Array.from(byAttribute.values());
+}
+
+export function mapProductToDetail(
+  dto: ProductDto,
+  pricelists: ProductPricelist[] = [],
+): ProductDetail {
+  return {
+    id: dto.id,
+    categoryId: dto.category.id,
+    sku: dto.sku,
+    name: dto.name,
+    category: dto.category.name,
+    price: Number(dto.price),
+    unit: dto.unit,
+    description: dto.description ?? "",
+    tax_pct: Number(dto.taxPct),
+    is_subscription: dto.isSubscription,
+    recurring_cycle: dto.recurringCycle
+      ? (dto.recurringCycle.toLowerCase() as RecurringCycle)
+      : null,
+    variants: groupVariants(dto.variants),
+    pricelists,
+  };
+}
