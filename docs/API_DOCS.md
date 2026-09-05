@@ -124,25 +124,79 @@ All three write `{ actor_id, action, timestamp, note }` into `history[]` — mat
 
 ## 5. Fulfillment — Screens 7 & 8
 
-### `GET /fulfillment/stock`
-**Response — fields needed (list)**: `product_name, warehouse_name, in_stock, reserved, available` — Stock table on Screen 7.
+Implemented by `src/modules/fulfillment/*` behind `src/app/api/fulfillment/orders/**`. "Order" is
+the same `Quotation` row used everywhere else (docs/ORDERS_FLOW.md §0) — there is no separate
+Order model. DTOs live in `src/modules/fulfillment/application/types.ts`, following this repo's
+actual camelCase-DTO / `/api/...` convention rather than the illustrative snake_case sketch this
+section used to show.
 
-### `GET /fulfillment/orders`
-**Response — fields needed (list)**: `order_code, customer_name, status (split_pending\|backorder\|ready), warehouses[]` — "Orders Awaiting Fulfillment" table.
+**Authentication**: Clerk session resolved server-side via `getRequestActor()`. No session → `401
+AUTHENTICATION_REQUIRED`.
 
-### `GET /fulfillment/orders/{id}` — Screen 8
-**Response — fields needed (detail)**
-| Field | Type |
-|---|---|
-| `order_code`, `customer_name` | string |
-| `suggested_split[]` → `{ warehouse_name, qty, est_shipment_date, cost }` | array — the split table |
-| `backorder_notice` → `{ warehouse_name, restock_eta } \| null` | object — powers the auto "Consolidate Remaining Backorder" banner |
+**Authorization**: `requireInternal` (any of ADMIN/SALES_REP/MANAGER/FINANCE_OPS — no CUSTOMER).
+No dedicated "Warehouse/Ops" role exists in the `Role` enum even though ORDERS_FLOW.md's actor
+table lists one; every internal role can view and act, matching the same gate
+`warehouseStockService`/`warehouseService` already use for their own view methods. A CUSTOMER
+actor gets `403 FORBIDDEN`.
 
-### `POST /fulfillment/orders/{id}/accept-split`
-No body (accepts server-suggested split as-is) → order status advances toward `shipped`.
+Only quotations that have reached `CONFIRMED` or later ever appear here: `CONFIRMED`,
+`FULFILLMENT`, `BILLING`, `COMPLETED`.
 
-### `POST /fulfillment/orders/{id}/override`
-Body: `{ splits: [{ warehouse_id, qty }] }` — **Manual Override** button.
+**Warehouse stock-on-hand** (Screen 7's other panel — `product_name, warehouse_name, in_stock,
+reserved, available`) is already real, existing functionality: see `/warehouses`
+(src/app/warehouses/page.tsx) and `GET /api/warehouse-stock` (src/modules/stock). This feature
+links to that screen rather than re-implementing it.
+
+### `GET /api/fulfillment/orders`
+**Response** `FulfillmentOrderListItemDto[]`: `{ id, orderCode, customerName, orderStatus,
+fulfillmentStatus, hasOpenBackorder, lineCount, amount, updatedAt }`. `id` is the quotation id.
+
+### `GET /api/fulfillment/orders/{id}` — Screen 8
+**Response** `FulfillmentOrderDetailDto`: `{ id, orderCode, customerName, orderStatus,
+fulfillmentStatus, orderTotal, lines[], suggestedSplit[], backorders[], billing, timeline[],
+updatedAt }`.
+- Before any `Fulfillment` row exists, `fulfillmentStatus` and `suggestedSplit[]` are **computed
+  live and side-effect-free** on every read (`PENDING` when one warehouse covers the order,
+  `SPLIT_PROPOSED` when it takes more than one) — this GET never writes.
+- `suggestedSplit[]` → `{ warehouseId, warehouseName, quantity, estShipmentDate, cost }`, using
+  the greedy largest-free-stock-first allocation in `domain/allocate-stock.ts` and the
+  placeholder, versioned rate/lead-time model in `domain/estimate-shipping.ts` (no real carrier
+  rate card exists yet — see that file's header comment before changing the numbers).
+- `backorders[]` → `{ id, productName, warehouseName, remainingQty, status, restockEta }`.
+- `billing` is a **read-only link** to whatever invoice already exists for this quotation (via
+  the existing `invoices`/`payments` tables) — this feature never creates or mutates an invoice.
+- `timeline[]` merges this order's own audit events (`ACCEPT_SUGGESTED_SPLIT`,
+  `MANUAL_OVERRIDE`, `SHIP`) with the customer portal's `PORTAL_CONFIRM`/`PORTAL_CONFIRM_REROUTED`
+  events for the same quotation, oldest first — the full order journey in one feed.
+**Errors**: `404 NOT_FOUND` (wrong status or doesn't exist).
+
+### `POST /api/fulfillment/orders/{id}/accept-split`
+No body — accepts the server-computed suggestion as-is. **Business rules**: quotation must be
+`CONFIRMED` (else `409 INVALID_STATE_TRANSITION`) with no existing `Fulfillment` row (else `409
+ALREADY_ACTIONED`). Creates `Fulfillment` + `FulfillmentItem` + `StockReservation` rows,
+increments each allocated `WarehouseStock.reservedQty`, creates a `Backorder` for any shortfall,
+and advances the quotation to `FULFILLMENT`. Resulting `fulfillmentStatus` is `ALLOCATED` (full
+coverage), `PARTIALLY_ALLOCATED` (some backordered), or `BACKORDERED` (none available anywhere).
+**Response**: the refreshed `FulfillmentOrderDetailDto`.
+
+### `POST /api/fulfillment/orders/{id}/override`
+**Body** (`overrideSplitSchema`): `{ splits: [{ warehouseId, quantity }] }` — **Manual Override**.
+Same state guards as accept-split, plus: only supports an order where every line shares one
+product (`400 VALIDATION_ERROR` otherwise — `SuggestedSplitDto`/the override body carry no
+per-line productId, matching this section's own original sketch); quantities must sum to the
+full ordered amount (`400 VALIDATION_ERROR`); each warehouse must have enough free stock
+(`availableQty - reservedQty`) for its requested quantity (`409 CONFIGURATION_CONFLICT`
+otherwise). Always results in `ALLOCATED` (no backorder possible by construction).
+**Response**: the refreshed `FulfillmentOrderDetailDto`.
+
+### `POST /api/fulfillment/orders/{id}/ship`
+No body. Not wired to any UI button yet (Stage 1's UI was committed before this endpoint existed)
+— available for a future UI update. **Business rules**: a `Fulfillment` row must exist (else
+`409 INVALID_STATE_TRANSITION`), no backorder may still be `OPEN`/`CONSOLIDATING` (else `409`),
+and it must not already be `SHIPPED` (else `409 ALREADY_ACTIONED`). Decrements
+`availableQty`/`reservedQty` for every allocated item, sets `Fulfillment.status` to `SHIPPED`,
+and advances the quotation to `BILLING`.
+**Response**: the refreshed `FulfillmentOrderDetailDto`.
 
 ---
 

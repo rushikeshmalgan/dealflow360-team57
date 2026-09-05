@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getFulfillmentService } from "@/modules/fulfillment/mock/fulfillment-mock-service";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import type {
   FulfillmentOrderListItemDto,
   FulfillmentStatus,
@@ -65,10 +65,10 @@ export default function FulfillmentPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getFulfillmentService().listOrders();
+      const data = await apiRequest<FulfillmentOrderListItemDto[]>("/api/fulfillment/orders");
       setOrders(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load orders.");
+      setError(err instanceof ApiClientError ? err.message : "Failed to load orders.");
     } finally {
       setLoading(false);
     }

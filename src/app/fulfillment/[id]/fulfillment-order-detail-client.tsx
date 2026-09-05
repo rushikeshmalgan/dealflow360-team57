@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getFulfillmentService } from "@/modules/fulfillment/mock/fulfillment-mock-service";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import type {
   BackorderStatus,
   BillingStatus,
@@ -118,13 +118,13 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await getFulfillmentService().getOrder(orderId);
+      const data = await apiRequest<FulfillmentOrderDetailDto>(`/api/fulfillment/orders/${orderId}`);
       setOrder(data);
       setOverrideQuantities(
         Object.fromEntries(data.suggestedSplit.map((s) => [s.warehouseId, String(s.quantity)])),
       );
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load this order.");
+      setLoadError(err instanceof ApiClientError ? err.message : "Failed to load this order.");
     } finally {
       setLoading(false);
     }
@@ -140,11 +140,14 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
     setActionSuccess(null);
     setAcceptingSplit(true);
     try {
-      const updated = await getFulfillmentService().acceptSuggestedSplit(orderId);
+      const updated = await apiRequest<FulfillmentOrderDetailDto>(
+        `/api/fulfillment/orders/${orderId}/accept-split`,
+        { method: "POST" },
+      );
       setOrder(updated);
       setActionSuccess("Suggested warehouse split accepted.");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to accept the suggested split.");
+      setActionError(err instanceof ApiClientError ? err.message : "Failed to accept the suggested split.");
     } finally {
       setAcceptingSplit(false);
     }
@@ -165,12 +168,15 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
 
     setOverriding(true);
     try {
-      const updated = await getFulfillmentService().overrideSplit(orderId, { splits });
+      const updated = await apiRequest<FulfillmentOrderDetailDto>(
+        `/api/fulfillment/orders/${orderId}/override`,
+        { method: "POST", body: JSON.stringify({ splits }) },
+      );
       setOrder(updated);
       setOverrideOpen(false);
       setActionSuccess("Manual override applied.");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to apply the manual override.");
+      setActionError(err instanceof ApiClientError ? err.message : "Failed to apply the manual override.");
     } finally {
       setOverriding(false);
     }
