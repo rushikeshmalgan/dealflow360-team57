@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getPortalService } from "@/modules/portal/mock/portal-mock-service";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import type {
   PortalNegotiationStatus,
   PortalQuotationListItemDto,
@@ -26,6 +26,7 @@ import type {
 const STATUS_BADGE: Record<PortalQuotationStatus, string> = {
   SENT_TO_CUSTOMER: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-200",
   UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-200",
+  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-200",
   CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
   COMPLETED: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-100",
 };
@@ -33,6 +34,7 @@ const STATUS_BADGE: Record<PortalQuotationStatus, string> = {
 const STATUS_LABEL: Record<PortalQuotationStatus, string> = {
   SENT_TO_CUSTOMER: "Awaiting your review",
   UNDER_NEGOTIATION: "In negotiation",
+  RE_APPROVAL_REQUIRED: "Awaiting internal approval",
   CONFIRMED: "Confirmed",
   COMPLETED: "Completed",
 };
@@ -53,10 +55,10 @@ export default function PortalQuotationsListPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getPortalService().listQuotations();
+      const data = await apiRequest<PortalQuotationListItemDto[]>("/api/portal/quotations");
       setQuotations(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load your quotations.");
+      setError(err instanceof ApiClientError ? err.message : "Failed to load your quotations.");
     } finally {
       setLoading(false);
     }

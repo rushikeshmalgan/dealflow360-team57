@@ -173,24 +173,63 @@ No body — **Cancel Subscription**; status → `cancelled`.
 
 ## 7. Customer Portal — Screen 11
 
-### `GET /portal/quotations` (customer-scoped, auth token restricts to own company)
-**Response — fields needed (list)**: `code, status, amount, updated_at` — "My Quotes" tab.
+Implemented by `src/modules/negotiation/*` (application/infrastructure) behind `src/app/api/portal/quotations/**`.
+DTOs live in `src/modules/portal/application/types.ts` and follow this codebase's actual
+camelCase-DTO / `/api/...` convention rather than the illustrative `snake_case` / `/api/v1`
+sketch this section used to show — field names below match what the server actually sends.
 
-### `GET /portal/quotations/{id}`
-**Response — fields needed (detail)**
-| Field | Type | Used for |
-|---|---|---|
-| `lines[]` → `{ product_name, comment }` | array | per-line comment thread (e.g. Extended Warranty, Docking Setup) |
-| `counter_discount_pct` | decimal \| null | Counter-Discount field (pre-filled if a request is already pending) |
-| `requested_delivery_date` | date \| null | Requested Delivery Date field |
-| `negotiation_status` | enum: `none\|pending\|confirmed` | controls whether Submit/Confirm buttons are enabled |
+**Authentication**: Clerk session (or `x-dev-user-id` in non-production) resolved server-side via
+`getRequestActor()` — never trust a customer id supplied by the client. No session → `401
+AUTHENTICATION_REQUIRED`.
 
-### `POST /portal/quotations/{id}/negotiate`
-Body: `{ counter_discount_pct?, requested_delivery_date?, line_comments?: [{line_id, comment}] }` — **Submit Request**.
+**Authorization**: every endpoint requires `role === "CUSTOMER"` with a resolved `customerId`
+(`requireCustomer` in `src/modules/shared/domain/actor.ts`) — any other role gets `403 FORBIDDEN`.
+Every query is additionally scoped to `customerId` at the database level (never fetch-then-check),
+so requesting another customer's quotation id returns `404 NOT_FOUND`, identical to a
+non-existent id — the response never reveals whether the id belongs to someone else.
 
-### `POST /portal/quotations/{id}/confirm`
-No body — **Confirm Quotation**. Server re-checks final terms against thresholds:
-**Response**: `{ status: "confirmed" }` or `{ status: "pending_approval", reason: "threshold_exceeded" }` — frontend shows a message and routes back into the approval flow (Screen 6) in the latter case.
+Only quotations in a customer-visible status are ever returned: `SENT_TO_CUSTOMER`,
+`UNDER_NEGOTIATION`, `RE_APPROVAL_REQUIRED`, `CONFIRMED`, `COMPLETED`. Of those, only
+`SENT_TO_CUSTOMER` and `UNDER_NEGOTIATION` accept a negotiate/confirm action.
+
+Every response DTO is pre-scrubbed of internal data (margin, cost, risk score, approval
+chain/comments, inventory, other customers) — the repository never selects those columns for
+this feature, so there is nothing to accidentally leak.
+
+### `GET /api/portal/quotations`
+List the signed-in customer's own quotations — "My Quotes" tab.
+**Response** `PortalQuotationListItemDto[]`: `{ id, code, status, negotiationStatus, total, updatedAt }`.
+
+### `GET /api/portal/quotations/{id}`
+**Response** `PortalQuotationDetailDto`: `{ id, code, status, validUntil, customerName,
+orderDiscountPct, orderTotal, lines[], negotiationStatus, pendingNegotiation, history[], updatedAt }`.
+Each line: `{ id, productName, sku, quantity, unitPrice, discountPct, lineTotal, comments[] }`.
+`pendingNegotiation` (`null` when none outstanding): `{ counterDiscountPct, requestedDeliveryDate,
+generalComment, submittedAt }`. `history[]`: `{ id, actor: "CUSTOMER"|"SALES", actorLabel, action,
+detail, createdAt }`, oldest first.
+**Errors**: `404 NOT_FOUND` (not owned, wrong status, or doesn't exist).
+
+### `POST /api/portal/quotations/{id}/negotiate`
+**Body** (`negotiateQuotationSchema`, at least one field required): `{ counterDiscountPct?: 0-100,
+requestedDeliveryDate?: "YYYY-MM-DD", generalComment?: string, lineComments?: [{lineId, comment}],
+changeRequests?: [{lineId, requestType: "QUANTITY_CHANGE"|"REMOVE_LINE"|"OTHER", note}] }`.
+**Validation**: Zod schema server-side (never trusts client-side validation); every `lineId`
+referenced must belong to this quotation or the whole request is rejected.
+**Business rules**: quotation must be `SENT_TO_CUSTOMER` or `UNDER_NEGOTIATION` (else `409
+INVALID_STATE_TRANSITION`); at most one negotiation may be `PENDING` at a time (else `409
+ALREADY_ACTIONED`). Persists one `Negotiation` row plus `CustomerComment`/`ChangeRequest` rows,
+moves the quotation to `UNDER_NEGOTIATION`, and writes an audit log entry.
+**Response**: the refreshed `PortalQuotationDetailDto`.
+
+### `POST /api/portal/quotations/{id}/confirm`
+No body. Re-evaluates the quotation's current discount/risk using the same discount-ceiling and
+risk-scoring engines T7.2's submit flow uses (`resolveDiscountCeiling`, `scoreRisk` —
+`src/modules/discount-risk`), then looks up the active `ApprovalRule` for the resulting risk band.
+**Business rules**: same state/pending guards as negotiate (`409` on either failure). If the risk
+band requires approval, freezes a new `QuotationVersion` + `RiskEvaluation` + `ApprovalRecord`
+chain (same shape T7.2 writes) and sets status to `RE_APPROVAL_REQUIRED`; otherwise sets `CONFIRMED`.
+**Response**: `{ result: { status: "CONFIRMED" | "PENDING_APPROVAL", reason?: "threshold_exceeded" },
+quotation: PortalQuotationDetailDto }` — one round trip, no separate re-fetch needed.
 
 ---
 

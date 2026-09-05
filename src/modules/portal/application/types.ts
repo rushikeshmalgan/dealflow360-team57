@@ -1,12 +1,9 @@
 /**
  * Customer Portal Negotiation — DTO contract.
  *
- * STAGE 1 (UI only): these types are consumed exclusively by the mock adapter in
- * `src/modules/portal/mock/portal-mock-service.ts`. No backend exists yet.
- *
- * STAGE 2 (backend, not yet built) is expected to expose this same shape from:
- *   GET  /api/portal/quotations              -> PortalQuotationListItemDto[]
- *   GET  /api/portal/quotations/{id}         -> PortalQuotationDetailDto
+ * Backed for real by `src/modules/negotiation/*` (application/infrastructure) and served over:
+ *   GET  /api/portal/quotations                 -> PortalQuotationListItemDto[]
+ *   GET  /api/portal/quotations/{id}            -> PortalQuotationDetailDto
  *   POST /api/portal/quotations/{id}/negotiate  (body: PortalNegotiationRequestInput) -> PortalQuotationDetailDto
  *   POST /api/portal/quotations/{id}/confirm    (no body) -> PortalConfirmResultDto
  *
@@ -14,13 +11,17 @@
  * Screen 11"), translated from that doc's illustrative snake_case/`/api/v1` sketch into this
  * codebase's actual camelCase DTO + `/api/...` route convention (see other modules under
  * src/modules/*). Every field here is customer-safe: no margin, cost, risk score, approval
- * chain/comments, inventory, or other-customer data — that scrubbing must happen server-side
- * in Stage 2, not just in the UI.
+ * chain/comments, inventory, or other-customer data — `PrismaNegotiationRepository` never
+ * selects those columns in the first place, so there is nothing to accidentally leak.
+ *
+ * The UI (src/app/portal/**) fetches these via the shared `apiRequest` helper, exactly like
+ * every other module's pages — there is no separate portal-specific client.
  */
 
 export type PortalQuotationStatus =
   | "SENT_TO_CUSTOMER"
   | "UNDER_NEGOTIATION"
+  | "RE_APPROVAL_REQUIRED"
   | "CONFIRMED"
   | "COMPLETED";
 
@@ -111,18 +112,3 @@ export type PortalConfirmResultDto = {
   status: "CONFIRMED" | "PENDING_APPROVAL";
   reason?: string;
 };
-
-/**
- * Port every negotiation UI action goes through. Stage 1 has exactly one implementation
- * (MockPortalService). Stage 2 adds a real implementation backed by the API routes above —
- * the UI does not need to change when that lands.
- */
-export interface PortalService {
-  listQuotations(): Promise<PortalQuotationListItemDto[]>;
-  getQuotation(id: string): Promise<PortalQuotationDetailDto>;
-  submitNegotiation(
-    id: string,
-    input: PortalNegotiationRequestInput,
-  ): Promise<PortalQuotationDetailDto>;
-  confirmQuotation(id: string): Promise<PortalConfirmResultDto>;
-}

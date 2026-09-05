@@ -27,9 +27,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { getPortalService } from "@/modules/portal/mock/portal-mock-service";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 import type {
   PortalChangeRequestInput,
+  PortalConfirmResultDto,
   PortalQuotationDetailDto,
   PortalQuotationStatus,
 } from "@/modules/portal/application/types";
@@ -37,6 +38,7 @@ import type {
 const STATUS_BADGE: Record<PortalQuotationStatus, string> = {
   SENT_TO_CUSTOMER: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-200",
   UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-200",
+  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-200",
   CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
   COMPLETED: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-100",
 };
@@ -44,6 +46,7 @@ const STATUS_BADGE: Record<PortalQuotationStatus, string> = {
 const STATUS_LABEL: Record<PortalQuotationStatus, string> = {
   SENT_TO_CUSTOMER: "Awaiting your review",
   UNDER_NEGOTIATION: "In negotiation",
+  RE_APPROVAL_REQUIRED: "Awaiting internal approval",
   CONFIRMED: "Confirmed",
   COMPLETED: "Completed",
 };
@@ -80,10 +83,10 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await getPortalService().getQuotation(quotationId);
+      const data = await apiRequest<PortalQuotationDetailDto>(`/api/portal/quotations/${quotationId}`);
       setQuotation(data);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load this quotation.");
+      setLoadError(err instanceof ApiClientError ? err.message : "Failed to load this quotation.");
     } finally {
       setLoading(false);
     }
@@ -141,18 +144,24 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
 
     setSubmitting(true);
     try {
-      const updated = await getPortalService().submitNegotiation(quotationId, {
-        counterDiscountPct: parsedDiscount,
-        requestedDeliveryDate: requestedDeliveryDate || undefined,
-        generalComment: trimmedComment || undefined,
-        lineComments: lineCommentEntries.length > 0 ? lineCommentEntries : undefined,
-        changeRequests: changeRequestEntries.length > 0 ? changeRequestEntries : undefined,
-      });
+      const updated = await apiRequest<PortalQuotationDetailDto>(
+        `/api/portal/quotations/${quotationId}/negotiate`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            counterDiscountPct: parsedDiscount,
+            requestedDeliveryDate: requestedDeliveryDate || undefined,
+            generalComment: trimmedComment || undefined,
+            lineComments: lineCommentEntries.length > 0 ? lineCommentEntries : undefined,
+            changeRequests: changeRequestEntries.length > 0 ? changeRequestEntries : undefined,
+          }),
+        },
+      );
       setQuotation(updated);
       resetForm();
       setSubmitSuccess("Your negotiation request was submitted. We'll notify you when sales responds.");
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit your request.");
+      setSubmitError(err instanceof ApiClientError ? err.message : "Failed to submit your request.");
     } finally {
       setSubmitting(false);
     }
@@ -163,8 +172,10 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
     setConfirmSuccess(null);
     setConfirmStep("submitting");
     try {
-      const result = await getPortalService().confirmQuotation(quotationId);
-      const refreshed = await getPortalService().getQuotation(quotationId);
+      const { result, quotation: refreshed } = await apiRequest<{
+        result: PortalConfirmResultDto;
+        quotation: PortalQuotationDetailDto;
+      }>(`/api/portal/quotations/${quotationId}/confirm`, { method: "POST" });
       setQuotation(refreshed);
       setConfirmSuccess(
         result.status === "CONFIRMED"
@@ -173,7 +184,7 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
       );
       setConfirmStep("idle");
     } catch (err) {
-      setConfirmError(err instanceof Error ? err.message : "Failed to confirm this quotation.");
+      setConfirmError(err instanceof ApiClientError ? err.message : "Failed to confirm this quotation.");
       setConfirmStep("idle");
     }
   }

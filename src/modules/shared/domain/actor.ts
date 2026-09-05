@@ -25,6 +25,24 @@ export function requireInternal(actor: Actor | null | undefined): asserts actor 
 }
 
 /**
+ * Gate for the customer portal (TAD-equivalent: a separate, restricted security context).
+ * Only a CUSTOMER-role actor with a resolved customerId may proceed — customerId always comes
+ * from the actor's own mirrored `users` row (see resolveActorForClerkUser), never from client
+ * input, so every portal repository query can scope directly on it without a separate ownership
+ * check after the fact.
+ */
+export function requireCustomer(
+  actor: Actor | null | undefined,
+): asserts actor is Actor & { customerId: string } {
+  if (!actor) {
+    throw new ServiceError("AUTHENTICATION_REQUIRED", "Authentication is required");
+  }
+  if (actor.role !== "CUSTOMER" || !actor.customerId) {
+    throw new ServiceError("FORBIDDEN", "Customer portal access is required");
+  }
+}
+
+/**
  * TAD SS6 role matrix: only some capabilities are role-specific (e.g. "Create and revise
  * assigned quotations" is Sales Rep only, Manager/Finance get Read). Use this instead of a
  * bespoke `actor.role !== "X"` check so the denial message stays consistent.
