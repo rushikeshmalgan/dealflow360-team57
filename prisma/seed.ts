@@ -10,6 +10,20 @@ import { PrismaClient } from "../src/generated/prisma/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+/**
+ * Fixed ids so local API testing (e.g. the Postman collection in docs/) can hardcode
+ * `x-dev-user-id` without re-reading them from the database after every reseed.
+ * These are the ONLY ids the dev-only bypass in src/lib/auth/resolve-actor.ts can ever
+ * impersonate with — it looks up the row and trusts its role/customerId, nothing from
+ * the request. Real Clerk users are unaffected; this is purely a local testing seam.
+ */
+const DEV_USERS = [
+  { id: "210b50ce-53f1-4762-906e-292cca031b02", clerkUserId: "dev-admin", email: "dev-admin@dealflow360.local", role: "ADMIN" as const },
+  { id: "54c4f54f-c413-44c7-98b1-60c0adb9ebef", clerkUserId: "dev-sales-rep", email: "dev-sales-rep@dealflow360.local", role: "SALES_REP" as const },
+  { id: "62b0a6e1-07b5-4806-9c3f-42426c32b57a", clerkUserId: "dev-manager", email: "dev-manager@dealflow360.local", role: "MANAGER" as const },
+  { id: "b27383ea-84f4-4f95-b2df-7160a08bda1f", clerkUserId: "dev-finance-ops", email: "dev-finance-ops@dealflow360.local", role: "FINANCE_OPS" as const },
+];
+
 async function main() {
   // 1. Customer Tiers
   await Promise.all(
@@ -140,6 +154,15 @@ async function main() {
       },
     }),
   ]);
+
+  // 6. Dev-only test users (local API testing bypass, see src/lib/auth/resolve-actor.ts)
+  for (const user of DEV_USERS) {
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: { clerkUserId: user.clerkUserId, email: user.email, role: user.role, isActive: true },
+      create: user,
+    });
+  }
 }
 
 main()
