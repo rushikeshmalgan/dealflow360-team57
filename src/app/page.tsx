@@ -182,7 +182,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f4f7f6] pb-16">
+    <div className="min-h-screen bg-[#171b22] pb-16">
       <DealFlowNav />
 
       <SignedOut>
@@ -208,7 +208,7 @@ export default function HomePage() {
       {false && (
         <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
         {/* Welcome & Command Bar */}
-        <section className="relative overflow-hidden rounded-2xl bg-[#102a2a] px-6 py-7 text-white shadow-xl shadow-[#102a2a]/10 sm:px-8">
+        <section className="relative overflow-hidden rounded-2xl border border-sky-300/30 bg-[#232a34] px-6 py-7 text-white shadow-xl shadow-black/20 sm:px-8">
           <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-4 border-[#d7a84b]/20" />
           <div className="absolute -bottom-20 right-24 h-52 w-52 rounded-full border-4 border-[#64b5a5]/15" />
           <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -271,12 +271,12 @@ export default function HomePage() {
           {metrics.map((m) => {
             const Icon = m.icon;
             return (
-              <Card key={m.title} className="border-[#dce7e4] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <Card key={m.title} className="border-slate-600/60 bg-[#232a34] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {m.title}
                   </CardTitle>
-                  <div className="rounded-md bg-[#e5f3ef] p-2 text-[#236d62]">
+                  <div className="rounded-md bg-sky-400/10 p-2 text-sky-300">
                     <Icon className="h-4 w-4" />
                   </div>
                 </CardHeader>

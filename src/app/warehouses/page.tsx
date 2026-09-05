@@ -175,7 +175,7 @@ export default function WarehousesPage() {
   const lowStockCount = stockItems.filter((s) => (s.availableQty - s.reservedQty) < 15).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-[#171b22] text-slate-100">
       <DealFlowNav />
       <main className="mx-auto max-w-7xl space-y-6 p-6">
         {/* Header section */}
@@ -355,7 +355,7 @@ export default function WarehousesPage() {
                 <Label htmlFor="wh-filter" className="text-xs font-medium text-slate-500">Filter Hub:</Label>
                 <select
                   id="wh-filter"
-                  className="h-9 rounded-md border border-slate-300 bg-white px-3 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="h-9 rounded-md border border-slate-700 bg-[#101f33] px-3 py-1 text-sm text-slate-100"
                   value={selectedWarehouseFilter}
                   onChange={(e) => setSelectedWarehouseFilter(e.target.value)}
                 >
@@ -521,7 +521,7 @@ export default function WarehousesPage() {
                     <Label htmlFor="adjust-wh" className="text-xs font-medium">Target Warehouse</Label>
                     <select
                       id="adjust-wh"
-                      className="w-full h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                      className="w-full h-10 rounded-md border border-slate-700 bg-[#101f33] px-3 py-2 text-sm text-slate-100"
                       value={targetWarehouseId}
                       onChange={(e) => setTargetWarehouseId(e.target.value)}
                       required
@@ -536,7 +536,7 @@ export default function WarehousesPage() {
                     <Label htmlFor="adjust-prod" className="text-xs font-medium">Target Product</Label>
                     <select
                       id="adjust-prod"
-                      className="w-full h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                      className="w-full h-10 rounded-md border border-slate-700 bg-[#101f33] px-3 py-2 text-sm text-slate-100"
                       value={targetProductId}
                       onChange={(e) => setTargetProductId(e.target.value)}
                       required

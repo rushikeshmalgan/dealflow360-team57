@@ -121,13 +121,21 @@ const toneClasses = {
   red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
 };
 
+const quotationColumns = [
+  { title: "Draft", tone: "slate", cards: [["Q-1052", "Northstar Labs", "$42,800"], ["Q-1051", "Globex Retail", "$18,600"]] },
+  { title: "Negotiation", tone: "blue", cards: [["Q-1047", "Cyberdyne Systems", "$88,500"], ["Q-1044", "Wayne Enterprises", "$215,000"]] },
+  { title: "Pending approval", tone: "amber", cards: [["Q-1049", "Acme Industrial Corp", "$124,000"]] },
+  { title: "Approved", tone: "green", cards: [["Q-1048", "Apex Telecom", "$96,400"], ["Q-1042", "Umbrella Health", "$31,200"]] },
+  { title: "Fulfillment", tone: "purple", cards: [["Q-1039", "Stark Global Logistics", "$64,200"]] },
+] as const;
+
 export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA }) {
   const data = SCREEN_DATA[screen];
   return (
-    <div className="min-h-screen bg-[#07111f] text-slate-100">
+    <div className="min-h-screen bg-[#171b22] text-slate-100">
       <DealFlowNav />
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
-        <section className="rounded-2xl border border-sky-400/20 bg-[#0d1d31] p-6 shadow-2xl shadow-sky-950/20 sm:p-8">
+        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">{data.eyebrow}</p>
@@ -143,7 +151,7 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
 
         <div className="grid gap-4 md:grid-cols-3">
           {data.metrics.map(([label, value, note]) => (
-            <Card key={label} className="border-slate-800 bg-[#0d1d31]">
+            <Card key={label} className="border-slate-600/60 bg-[#232a34]">
               <CardContent className="p-5">
                 <p className="text-xs uppercase tracking-wider text-slate-500">{label}</p>
                 <p className="mt-2 text-3xl font-semibold text-slate-50">{value}</p>
@@ -153,12 +161,14 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
           ))}
         </div>
 
-        <Card className="border-slate-800 bg-[#0d1d31]">
+        {screen === "quotations" && <QuotationKanban />}
+
+        <Card className="border-slate-600/60 bg-[#232a34]">
           <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-slate-800">
             <CardTitle className="text-base">Live work queue</CardTitle>
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-              <Input placeholder="Search records" className="border-slate-700 bg-[#07111f] pl-9 text-slate-100 placeholder:text-slate-500" />
+              <Input placeholder="Search records" className="border-slate-600 bg-[#171b22] pl-9 text-slate-100 placeholder:text-slate-500" />
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -176,12 +186,52 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-[#0b182a] px-4 py-3 text-xs text-slate-400">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-600/60 bg-[#202631] px-4 py-3 text-xs text-slate-400">
           {data.title === "Approval queue" ? <ShieldAlert className="h-4 w-4 text-amber-300" /> : <CheckCircle2 className="h-4 w-4 text-emerald-300" />}
           <span>Workspace data is synced with the quote-to-cash workflow.</span>
           <span className="ml-auto flex items-center gap-1 text-slate-500"><Clock3 className="h-3.5 w-3.5" />Updated moments ago</span>
         </div>
       </main>
     </div>
+  );
+}
+
+function QuotationKanban() {
+  return (
+    <Card className="border-slate-600/60 bg-[#232a34]">
+      <CardHeader className="border-b border-slate-600/60 bg-[#202631]">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Quotation Kanban</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">Move deals through the quote-to-cash stages.</p>
+          </div>
+          <Badge className="border border-sky-400/30 bg-sky-400/10 text-sky-200">7 active</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-4 sm:p-5">
+        <div className="grid min-h-[560px] min-w-[1180px] grid-cols-5 gap-3">
+          {quotationColumns.map((column) => (
+            <div key={column.title} className="rounded-md border border-slate-600/70 bg-[#171b22] p-2">
+              <div className="mb-3 flex items-center justify-between border-b border-slate-700 px-2 py-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-200">{column.title}</span>
+                <span className="rounded bg-sky-400 px-1.5 py-0.5 text-[10px] font-bold text-slate-950">{column.cards.length}</span>
+              </div>
+              <div className="min-h-[470px] space-y-2 rounded border border-dashed border-slate-700/80 p-1">
+                {column.cards.map(([id, customer, amount]) => (
+                  <div key={id} className="rounded border border-slate-600 bg-[#2a323d] p-3 shadow-sm transition-colors hover:border-sky-300">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[11px] font-bold text-sky-300">{id}</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-slate-600" />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-slate-100">{customer}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">{amount}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
