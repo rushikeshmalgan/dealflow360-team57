@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ApiClientError, apiRequest } from "@/lib/api-client";
 
 interface PipelineMetric {
   title: string;
@@ -43,63 +44,115 @@ interface PipelineMetric {
   icon: React.ComponentType<{ className?: string }>;
   trend: string;
   href: string;
+  isLive: boolean;
 }
+
+/**
+ * Only the fields this dashboard reads off GET /api/quotations — see
+ * src/modules/quotation/application/types.ts QuotationDto for the full shape the API returns.
+ */
+type QuotationSummaryRow = {
+  status:
+    | "DRAFT"
+    | "SUBMITTED"
+    | "PENDING_APPROVAL"
+    | "APPROVED"
+    | "REJECTED"
+    | "SENT_TO_CUSTOMER"
+    | "UNDER_NEGOTIATION"
+    | "RE_APPROVAL_REQUIRED"
+    | "CONFIRMED"
+    | "FULFILLMENT"
+    | "BILLING"
+    | "COMPLETED";
+  summary: { netBeforeTax: string };
+};
+
+// Terminal states no longer count as "open pipeline" (TAD SS9 state machine).
+const CLOSED_STATUSES = new Set(["REJECTED", "COMPLETED"]);
 
 export default function HomePage() {
   const { isSignedIn } = useAuth();
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [quotations, setQuotations] = useState<QuotationSummaryRow[] | null>(null);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) {
       setProductCount(null);
+      setQuotations(null);
       return;
     }
 
-    // Attempt to fetch current product count from active catalog API
-    fetch("/api/products")
-      .then((res) => (res.ok ? res.json() : null))
+    let cancelled = false;
+    apiRequest<{ id: string }[]>("/api/products")
       .then((data) => {
-        if (Array.isArray(data)) {
-          setProductCount(data.length);
-        }
+        if (!cancelled) setProductCount(data.length);
       })
       .catch(() => {
-        // Fallback silently if unseeded
+        // Catalog tile falls back to its placeholder below if this 404s/500s.
       });
+
+    apiRequest<QuotationSummaryRow[]>("/api/quotations")
+      .then((data) => {
+        if (!cancelled) setQuotations(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // A Sales Rep's list is scoped to their own quotations server-side (quotation-service.ts);
+        // an empty/denied result here is expected for non-Rep roles, not a bug.
+        setPipelineError(err instanceof ApiClientError ? err.message : "Failed to load quotations.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isSignedIn]);
+
+  const openQuotations = quotations?.filter((q) => !CLOSED_STATUSES.has(q.status)) ?? null;
+  const pendingApprovals = quotations?.filter((q) => q.status === "PENDING_APPROVAL") ?? null;
+  const pipelineTotal =
+    openQuotations?.reduce((sum, q) => sum + Number(q.summary.netBeforeTax), 0) ?? null;
 
   const metrics: PipelineMetric[] = [
     {
       title: "Open Quotations",
-      value: "18",
-      sub: "$482,500 total pipeline",
+      value: openQuotations !== null ? String(openQuotations.length) : "—",
+      sub:
+        pipelineTotal !== null
+          ? `$${pipelineTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })} total pipeline`
+          : pipelineError ?? "Loading…",
       icon: FileText,
-      trend: "+12% this week",
+      trend: "Live from /api/quotations",
       href: "/quotations",
+      isLive: true,
     },
     {
       title: "Pending Approvals",
-      value: "4",
-      sub: "Requires Manager / Finance review",
+      value: pendingApprovals !== null ? String(pendingApprovals.length) : "—",
+      sub: "Quotations awaiting Manager / Finance review",
       icon: Clock,
-      trend: "2 high priority",
+      trend: "Live from /api/quotations",
       href: "/approvals",
+      isLive: true,
     },
     {
       title: "At-Risk Deals",
       value: "3",
       sub: "Flagged by Deal Health Engine",
       icon: AlertTriangle,
-      trend: "Discount & delivery flags",
+      trend: "Sample data — Deal Health module not built yet",
       href: "/deal-health",
+      isLive: false,
     },
     {
       title: "Active Catalog",
-      value: productCount !== null ? String(productCount) : "24",
+      value: productCount !== null ? String(productCount) : "—",
       sub: "Products & tiered price lists",
       icon: Package,
-      trend: "Master catalog ready",
+      trend: "Live from /api/products",
       href: "/products",
+      isLive: true,
     },
   ];
 
