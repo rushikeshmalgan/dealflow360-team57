@@ -6,7 +6,7 @@
     "node": "22.16.0"
   },
   "scripts": {
-    "dev": "node --watch --experimental-loader=./loader/ts-alias-loader.mjs --experimental-strip-types --env-file=.env server.ts --dev",
+    "dev": "node --experimental-loader=./loader/ts-alias-loader.mjs --experimental-strip-types --env-file=.env server.ts --dev",
     "build": "next build --turbopack",
     "start": "node --experimental-loader=./loader/ts-alias-loader.mjs --experimental-strip-types --env-file=.env server.ts",
     "lint": "eslint",

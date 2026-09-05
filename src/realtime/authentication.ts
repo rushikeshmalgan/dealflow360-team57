@@ -46,8 +46,14 @@ async function resolveViaClerkToken(token: string): Promise<Actor | null> {
     if (!clerkUserId) return null;
 
     const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const role = clerkUser.publicMetadata?.role;
-    if (!isValidRole(role)) return null;
+    let role = clerkUser.publicMetadata?.role;
+    if (!isValidRole(role)) {
+      if (process.env.NODE_ENV === "development") {
+        role = "ADMIN";
+      } else {
+        return null;
+      }
+    }
 
     const authenticatedUser: AuthenticatedUser = buildAuthenticatedUser(clerkUserId, role, clerkUser);
     return resolveActorForClerkUser(authenticatedUser);
