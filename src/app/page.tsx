@@ -13,6 +13,7 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 
 import { DealFlowNav } from "@/components/dealflow-nav";
 import { Badge } from "@/components/ui/badge";
@@ -43,9 +44,15 @@ interface PipelineMetric {
 }
 
 export default function HomePage() {
+  const { isSignedIn } = useAuth();
   const [productCount, setProductCount] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!isSignedIn) {
+      setProductCount(null);
+      return;
+    }
+
     // Attempt to fetch current product count from active catalog API
     fetch("/api/products")
       .then((res) => (res.ok ? res.json() : null))
@@ -57,7 +64,7 @@ export default function HomePage() {
       .catch(() => {
         // Fallback silently if unseeded
       });
-  }, []);
+  }, [isSignedIn]);
 
   const metrics: PipelineMetric[] = [
     {
@@ -176,242 +183,268 @@ export default function HomePage() {
     <div className="min-h-screen bg-secondary/30 pb-16">
       <DealFlowNav />
 
-      <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
-        {/* Welcome & Command Bar */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Sales Operations Hub
-              </span>
-              <span className="text-xs text-muted-foreground">Screen 2 • DealFlow360</span>
+      <SignedOut>
+        <main className="mx-auto max-w-2xl px-4 py-20 sm:px-6">
+          <Card className="border-border bg-card p-8 text-center shadow-md">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-5">
+              <ShieldCheck className="h-7 w-7" />
             </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Commercial Operations Dashboard
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              DealFlow360 Commercial Operations
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Real-time quote-to-cash pipeline, automated approval governance, and deal health telemetry.
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              Authentication required. Sign in to access your sales operations dashboard, active pipeline metrics, quotation approvals, and deal health telemetry.
             </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/products"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <Package className="mr-1.5 h-4 w-4" />
-              Product Catalog
-            </Link>
-            <Link
-              href="/approvals"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <ShieldCheck className="mr-1.5 h-4 w-4" />
-              Approval Queue
-            </Link>
-            <Link
-              href="/products/new"
-              className={buttonVariants({ size: "sm" })}
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              New Product
-            </Link>
-          </div>
-        </div>
-
-        {/* Top KPI Metrics Tiles */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((m) => {
-            const Icon = m.icon;
-            return (
-              <Card key={m.title} className="transition-all hover:shadow-md">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {m.title}
-                  </CardTitle>
-                  <div className="rounded-md bg-primary/10 p-2 text-primary">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{m.value}</div>
-                  <p className="mt-1 text-xs text-muted-foreground">{m.sub}</p>
-                  <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50 text-xs">
-                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                      {m.trend}
-                    </span>
-                    <Link
-                      href={m.href}
-                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                    >
-                      View
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* End-to-End Lifecycle Stages */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold">
-                  Quote-to-Cash End-to-End Lifecycle
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Unified governance flow connecting pricing, discount risk scoring, approvals, and fulfillment.
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                P0 Architecture
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {workflowStages.map((stage) => (
-                <div
-                  key={stage.num}
-                  className="relative rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="flex h-5 w-5 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">
-                      {stage.num}
-                    </span>
-                    <span className="text-xs font-semibold text-foreground truncate">
-                      {stage.name}
-                    </span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {stage.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main 2-Column Split: At-Risk Deals & Recent Activity */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left 2 Cols: At-Risk Deals & Priority Approvals */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base font-semibold">
-                  At-Risk Deals & Escalation Queue
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Deals requiring action due to discount boundary violations or delivery slippage.
-                </CardDescription>
-              </div>
-              <Link href="/deal-health" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                View All Flags
-                <ArrowRight className="ml-1 h-3 w-3" />
+            <div className="mt-8 flex justify-center gap-4">
+              <Link
+                href="/sign-in"
+                className={buttonVariants({ size: "lg", className: "px-6 font-semibold shadow-sm" })}
+              >
+                Sign In to DealFlow360
               </Link>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Quote</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Risk Signal</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {atRiskDeals.map((deal) => (
-                    <TableRow key={deal.id}>
-                      <TableCell className="font-mono text-xs font-bold text-primary">
-                        {deal.id}
-                      </TableCell>
-                      <TableCell className="text-xs font-medium text-foreground">
-                        {deal.customer}
-                      </TableCell>
-                      <TableCell className="text-xs font-semibold">{deal.amount}</TableCell>
-                      <TableCell className="text-xs">
-                        <Badge
-                          variant={deal.severity === "high" ? "destructive" : "secondary"}
-                          className="text-[10px]"
-                        >
-                          {deal.discount}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {deal.riskReason}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link
-                          href="/quotations"
-                          className={buttonVariants({ variant: "outline", size: "xs" })}
-                        >
-                          Review
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
+            </div>
           </Card>
+        </main>
+      </SignedOut>
 
-          {/* Right Col: Live Activity Stream */}
-          <Card>
+      <SignedIn>
+        <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
+          {/* Welcome & Command Bar */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  Sales Operations Hub
+                </span>
+                <span className="text-xs text-muted-foreground">Screen 2 • DealFlow360</span>
+              </div>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Commercial Operations Dashboard
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Real-time quote-to-cash pipeline, automated approval governance, and deal health telemetry.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/products"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <Package className="mr-1.5 h-4 w-4" />
+                Product Catalog
+              </Link>
+              <Link
+                href="/approvals"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <ShieldCheck className="mr-1.5 h-4 w-4" />
+                Approval Queue
+              </Link>
+              <Link
+                href="/products/new"
+                className={buttonVariants({ size: "sm" })}
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                New Product
+              </Link>
+            </div>
+          </div>
+
+          {/* Top KPI Metrics Tiles */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {metrics.map((m) => {
+              const Icon = m.icon;
+              return (
+                <Card key={m.title} className="transition-all hover:shadow-md">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {m.title}
+                    </CardTitle>
+                    <div className="rounded-md bg-primary/10 p-2 text-primary">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{m.value}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">{m.sub}</p>
+                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                      <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                        {m.trend}
+                      </span>
+                      <Link
+                        href={m.href}
+                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                      >
+                        View
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* End-to-End Lifecycle Stages */}
+          <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold">Audit & Activity Log</CardTitle>
-                <Badge variant="outline" className="text-[10px]">
-                  Live Feed
+                <div>
+                  <CardTitle className="text-base font-semibold">
+                    Quote-to-Cash End-to-End Lifecycle
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Unified governance flow connecting pricing, discount risk scoring, approvals, and fulfillment.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  P0 Architecture
                 </Badge>
               </div>
-              <CardDescription className="text-xs">
-                Immutable event stream for compliance (Screen 18).
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((act) => (
-                  <div key={act.id} className="flex gap-3 text-xs">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      {act.type === "approval" ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : act.type === "risk" ? (
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                      ) : (
-                        <Layers className="h-3.5 w-3.5 text-primary" />
-                      )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {workflowStages.map((stage) => (
+                  <div
+                    key={stage.num}
+                    className="relative rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="flex h-5 w-5 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">
+                        {stage.num}
+                      </span>
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {stage.name}
+                      </span>
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="font-medium text-foreground leading-snug">{act.action}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span>{act.actor}</span>
-                        <span>•</span>
-                        <span>{act.time}</span>
-                      </div>
-                    </div>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {stage.desc}
+                    </p>
                   </div>
                 ))}
               </div>
-
-              <div className="mt-6 pt-4 border-t border-border">
-                <Link
-                  href="/products"
-                  className={buttonVariants({ variant: "outline", size: "sm", className: "w-full text-xs justify-center" })}
-                >
-                  Browse Product Catalog
-                  <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </div>
             </CardContent>
           </Card>
-        </div>
-      </main>
+
+          {/* Main 2-Column Split: At-Risk Deals & Recent Activity */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Left 2 Cols: At-Risk Deals & Priority Approvals */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-base font-semibold">
+                    At-Risk Deals & Escalation Queue
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Deals requiring action due to discount boundary violations or delivery slippage.
+                  </CardDescription>
+                </div>
+                <Link href="/deal-health" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  View All Flags
+                  <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Quote</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Risk Signal</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {atRiskDeals.map((deal) => (
+                      <TableRow key={deal.id}>
+                        <TableCell className="font-mono text-xs font-bold text-primary">
+                          {deal.id}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium text-foreground">
+                          {deal.customer}
+                        </TableCell>
+                        <TableCell className="text-xs font-semibold">{deal.amount}</TableCell>
+                        <TableCell className="text-xs">
+                          <Badge
+                            variant={deal.severity === "high" ? "destructive" : "secondary"}
+                            className="text-[10px]"
+                          >
+                            {deal.discount}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                          {deal.riskReason}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            href="/quotations"
+                            className={buttonVariants({ variant: "outline", size: "xs" })}
+                          >
+                            Review
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Right Col: Live Activity Stream */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold">Audit & Activity Log</CardTitle>
+                  <Badge variant="outline" className="text-[10px]">
+                    Live Feed
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs">
+                  Immutable event stream for compliance (Screen 18).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentActivity.map((act) => (
+                    <div key={act.id} className="flex gap-3 text-xs">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        {act.type === "approval" ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : act.type === "risk" ? (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                        ) : (
+                          <Layers className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-medium text-foreground leading-snug">{act.action}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span>{act.actor}</span>
+                          <span>•</span>
+                          <span>{act.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-border">
+                  <Link
+                    href="/products"
+                    className={buttonVariants({ variant: "outline", size: "sm", className: "w-full text-xs justify-center" })}
+                  >
+                    Browse Product Catalog
+                    <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </SignedIn>
     </div>
   );
 }
