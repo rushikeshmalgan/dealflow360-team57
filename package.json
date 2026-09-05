@@ -25,6 +25,8 @@
     "@hookform/resolvers": "5.9.1",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "@rolldown/binding-wasm32-wasi": "^1.2.7",
+    "@rolldown/binding-win32-x64-msvc": "^1.2.7",
     "class-variance-authority": "0.7.1",
     "cn": "0.2.5",
     "ioredis": "5.6.1",

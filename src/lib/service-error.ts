@@ -23,7 +23,7 @@ export class ServiceError extends Error {
     message: string,
     readonly details?: unknown,
   ) {
-    super(message);
+    super(`[${code}] ${message}`);
     this.name = "ServiceError";
     this.status = statusByCode[code];
   }
