@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { DEAL_HEALTH_EVALUATE_EVENT } from "@/modules/deal-health";
 import { MAINTENANCE_PING } from "@/jobs/processors/maintenance";
 import { JOB_PROCESSORS, queuesWithProcessors, resolveQueueName } from "@/jobs/registry";
 
@@ -22,10 +23,11 @@ describe("resolveQueueName", () => {
 describe("queuesWithProcessors", () => {
   it("only lists queues that actually have a registered processor", () => {
     // notifications/exports/conversions are reserved for future features - no processor yet.
-    expect(queuesWithProcessors()).toEqual(["maintenance"]);
+    expect([...queuesWithProcessors()].sort()).toEqual(["deal-health", "maintenance"]);
   });
 
-  it("registers the maintenance.ping processor", () => {
+  it("registers the maintenance.ping and deal-health.evaluate processors", () => {
     expect(Object.keys(JOB_PROCESSORS)).toContain(MAINTENANCE_PING);
+    expect(Object.keys(JOB_PROCESSORS)).toContain(DEAL_HEALTH_EVALUATE_EVENT);
   });
 });

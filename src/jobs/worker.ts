@@ -5,10 +5,12 @@ import { createWorkerConnection } from "@/jobs/connection";
 import { closeAllQueues } from "@/jobs/queues";
 import { JOB_PROCESSORS, queuesWithProcessors } from "@/jobs/registry";
 import { startDispatcherLoop } from "@/jobs/dispatcher";
+import { startDealHealthScheduler } from "@/jobs/deal-health-scheduler";
 import type { OutboxJobData } from "@/jobs/types";
 
 const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 5);
 const DISPATCH_INTERVAL_MS = Number(process.env.DISPATCH_INTERVAL_MS ?? 3000);
+const DEAL_HEALTH_INTERVAL_MS = Number(process.env.DEAL_HEALTH_INTERVAL_MS ?? 5 * 60 * 1000);
 
 async function processJob(job: Job<OutboxJobData>) {
   const processor = JOB_PROCESSORS[job.name];
@@ -71,6 +73,7 @@ async function main() {
   });
 
   const stopDispatcher = startDispatcherLoop(DISPATCH_INTERVAL_MS);
+  const stopDealHealthScheduler = startDealHealthScheduler(DEAL_HEALTH_INTERVAL_MS);
   console.log("[worker] started", { queues: queueNames, concurrency: CONCURRENCY });
 
   let shuttingDown = false;
@@ -79,6 +82,7 @@ async function main() {
     shuttingDown = true;
     console.log(`[worker] received ${signal}, shutting down`);
     stopDispatcher();
+    stopDealHealthScheduler();
     // Worker.close() waits for active jobs to finish before resolving.
     await Promise.all(workers.map((worker) => worker.close()));
     await closeAllQueues();

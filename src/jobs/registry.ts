@@ -1,4 +1,5 @@
 import type { QueueName } from "@/jobs/queues";
+import { dealHealthProcessors } from "@/jobs/processors/deal-health";
 import { maintenanceProcessors } from "@/jobs/processors/maintenance";
 import type { JobProcessor } from "@/jobs/types";
 
@@ -8,6 +9,7 @@ const DOMAIN_TO_QUEUE: Record<string, QueueName> = {
   export: "exports",
   conversion: "conversions",
   maintenance: "maintenance",
+  "deal-health": "deal-health",
 };
 
 /**
@@ -31,6 +33,7 @@ export function resolveQueueName(eventType: string): QueueName {
  */
 export const JOB_PROCESSORS: Record<string, JobProcessor> = {
   ...maintenanceProcessors,
+  ...dealHealthProcessors,
 };
 
 /** Queues the worker process should actually listen on - only ones with a registered processor. */

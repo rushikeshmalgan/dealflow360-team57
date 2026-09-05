@@ -7,7 +7,7 @@ import { getProducerConnection } from "./connection";
  * feature; the others exist so future features (email, report export, file conversion) can
  * start enqueuing into a dedicated queue without touching this infra again.
  */
-export const QUEUE_NAMES = ["notifications", "exports", "conversions", "maintenance"] as const;
+export const QUEUE_NAMES = ["notifications", "exports", "conversions", "maintenance", "deal-health"] as const;
 export type QueueName = (typeof QUEUE_NAMES)[number];
 
 const queues = new Map<QueueName, Queue>();
