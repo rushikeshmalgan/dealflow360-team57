@@ -211,6 +211,10 @@ model Product {
   sku            String               @unique
   name           String
   price          Decimal              @db.Decimal(14, 2)
+  /// Unit cost basis (TAD SS8 "Margin" data dependency of the Discount and Risk module;
+  /// used only by T6.4's margin calculation, never shown to customers). Defaults to 0 so
+  /// existing/seeded products remain valid; a 0-cost line simply shows 100% margin.
+  costPrice      Decimal              @default(0) @map("cost_price") @db.Decimal(14, 2)
   unit           String
   taxPct         Decimal              @map("tax_pct") @db.Decimal(7, 4)
   description    String?

@@ -4,6 +4,9 @@ export type ServiceErrorCode =
   | "NOT_FOUND"
   | "VALIDATION_ERROR"
   | "CONFIGURATION_CONFLICT"
+  | "INVALID_STATE_TRANSITION"
+  | "VERSION_CONFLICT"
+  | "ALREADY_ACTIONED"
   | "INTERNAL_ERROR";
 
 const statusByCode: Record<ServiceErrorCode, number> = {
@@ -12,6 +15,9 @@ const statusByCode: Record<ServiceErrorCode, number> = {
   NOT_FOUND: 404,
   VALIDATION_ERROR: 400,
   CONFIGURATION_CONFLICT: 409,
+  INVALID_STATE_TRANSITION: 409,
+  VERSION_CONFLICT: 409,
+  ALREADY_ACTIONED: 409,
   INTERNAL_ERROR: 500,
 };
 

@@ -17,6 +17,7 @@ export const createProductSchema = z
     sku: z.string().trim().min(1).max(100),
     name: z.string().trim().min(1).max(200),
     price: money,
+    costPrice: money.default(0),
     unit: z.string().trim().min(1).max(50),
     taxPct: percentage,
     description: z.string().trim().max(5_000).nullable().optional(),
@@ -47,6 +48,7 @@ export const updateProductSchema = z.object({
   sku: z.string().trim().min(1).max(100).optional(),
   name: z.string().trim().min(1).max(200).optional(),
   price: money.optional(),
+  costPrice: money.optional(),
   unit: z.string().trim().min(1).max(50).optional(),
   taxPct: percentage.optional(),
   description: z.string().trim().max(5_000).nullable().optional(),
@@ -57,7 +59,10 @@ export const updateProductSchema = z.object({
 });
 
 export const productListQuerySchema = z.object({
-  active: z.enum(["true", "false"]).transform((value) => value === "true").optional(),
+  active: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
   categoryId: z.string().uuid().optional(),
 });
 
