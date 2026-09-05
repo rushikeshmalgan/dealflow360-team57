@@ -1,9 +1,11 @@
 import type { NextRequest } from "next/server";
 
-import { prisma } from "@/lib/db";
 import type { Actor } from "@/modules/shared/domain/actor";
 
+import { resolveActorByInternalUserId, resolveActorForClerkUser } from "./clerk-mapping";
 import { getCurrentUser } from "./server";
+
+export { resolveActorByInternalUserId, resolveActorForClerkUser } from "./clerk-mapping";
 
 /**
  * Maps a request to this app's internal Actor `{id, role, customerId}` — the shape every
@@ -23,33 +25,11 @@ import { getCurrentUser } from "./server";
 export async function resolveRequestActor(request: NextRequest): Promise<Actor | null> {
   if (process.env.NODE_ENV !== "production") {
     const devUserId = request.headers.get("x-dev-user-id");
-    if (devUserId) {
-      const user = await prisma.user.findUnique({
-        where: { id: devUserId },
-        select: { id: true, role: true, customerId: true, isActive: true },
-      });
-      if (!user?.isActive) return null;
-      return { id: user.id, role: user.role, customerId: user.customerId };
-    }
+    if (devUserId) return resolveActorByInternalUserId(devUserId);
   }
 
   const clerkUser = await getCurrentUser();
   if (!clerkUser) return null;
 
-  // HACKATHON SHORTCUT (TAD §7 calls for a Clerk webhook or "explicit seed/sync command" to
-  // mirror Clerk -> users; neither is wired up yet, so a teammate who signs up through the
-  // real Clerk UI would otherwise have no `users` row and every mutation would 401 forever).
-  // Auto-provision/refresh the mirror row here instead. This is still safe: role/email come
-  // from Clerk's server-verified publicMetadata (getCurrentUser(), never client input), so a
-  // caller cannot grant themselves a role — it only ever mirrors what Clerk already asserts.
-  // Replace with a real /api/webhooks/clerk (T1.2) before production.
-  const user = await prisma.user.upsert({
-    where: { clerkUserId: clerkUser.clerkUserId },
-    update: { email: clerkUser.email, role: clerkUser.role },
-    create: { clerkUserId: clerkUser.clerkUserId, email: clerkUser.email, role: clerkUser.role },
-    select: { id: true, role: true, customerId: true, isActive: true },
-  });
-  if (!user.isActive) return null;
-
-  return { id: user.id, role: user.role, customerId: user.customerId };
+  return resolveActorForClerkUser(clerkUser);
 }

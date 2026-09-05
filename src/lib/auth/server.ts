@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 
+import { buildAuthenticatedUser } from "./clerk-mapping";
 import type { AppRole } from "./roles";
 import { isValidRole } from "./roles";
 import type { AuthenticatedUser } from "./types";
@@ -33,13 +34,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     return null;
   }
 
-  return {
-    clerkUserId: userId,
-    role,
-    email: user.emailAddresses[0]?.emailAddress ?? "",
-    firstName: user.firstName,
-    lastName: user.lastName,
-  };
+  return buildAuthenticatedUser(userId, role, user);
 }
 
 /**
