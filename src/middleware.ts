@@ -22,8 +22,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/login(.*)",
-  "/api/health",
-  "/api/webhooks/(.*)",
+  "/api/(.*)",
 ]);
 
 /**
@@ -38,6 +37,13 @@ export default clerkMiddleware(async (auth, request) => {
   // If already signed in, prevent visiting login/sign-in (e.g. browser back button)
   if (userId && isAuthRoute(request)) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // API routes enforce identity & role-based access control directly via getRequestActor()
+  // and return appropriate JSON error payloads (401/403) instead of browser redirects.
+  // In development, this also enables x-dev-user-id testing for Postman/curl.
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    return;
   }
 
   if (!isPublicRoute(request)) {

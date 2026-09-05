@@ -7,13 +7,11 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  Command,
   FileText,
   Layers,
   Package,
   Plus,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 
