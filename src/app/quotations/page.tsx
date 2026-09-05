@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { DealFlowNav } from "@/components/dealflow-nav";
+import { RecommendationPane } from "@/components/recommendations/recommendation-pane";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -598,6 +599,16 @@ export default function QuotationsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Upsell / Cross-Sell */}
+                  {selectedQuote.status === "DRAFT" && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                        Upsell &amp; Cross-Sell
+                      </h3>
+                      <RecommendationPane quotationId={selectedQuote.id} />
+                    </div>
+                  )}
 
                   {/* Actions */}
                   {selectedQuote.status === "DRAFT" && selectedQuote.lines.length > 0 && !submitResult && (
