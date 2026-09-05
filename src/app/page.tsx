@@ -7,11 +7,13 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Command,
   FileText,
   Layers,
   Package,
   Plus,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import { DealFlowNav } from "@/components/dealflow-nav";
@@ -173,25 +175,42 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-secondary/30 pb-16">
+    <div className="min-h-screen bg-[#f4f7f6] pb-16">
       <DealFlowNav />
 
       <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
         {/* Welcome & Command Bar */}
+        <section className="relative overflow-hidden rounded-2xl bg-[#102a2a] px-6 py-7 text-white shadow-xl shadow-[#102a2a]/10 sm:px-8">
+          <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-4 border-[#d7a84b]/20" />
+          <div className="absolute -bottom-20 right-24 h-52 w-52 rounded-full border-4 border-[#64b5a5]/15" />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#9bd5c8]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Sales operations hub
+              </div>
+              <h1 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                Keep every deal moving.
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
+                Quote-to-cash visibility, approval governance, and deal health signals in one working view.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-xs text-white/75">
+              <span className="h-2 w-2 rounded-full bg-[#8fe0b7] shadow-[0_0_0_4px_rgba(143,224,183,0.15)]" />
+              All systems operational
+            </div>
+          </div>
+        </section>
+
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Sales Operations Hub
-              </span>
-              <span className="text-xs text-muted-foreground">Screen 2 • DealFlow360</span>
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Command className="h-3.5 w-3.5" />
+              <span>Workspace overview</span>
+              <span className="text-border">/</span>
+              <span>Updated moments ago</span>
             </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Commercial Operations Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Real-time quote-to-cash pipeline, automated approval governance, and deal health telemetry.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -224,12 +243,12 @@ export default function HomePage() {
           {metrics.map((m) => {
             const Icon = m.icon;
             return (
-              <Card key={m.title} className="transition-all hover:shadow-md">
+              <Card key={m.title} className="border-[#dce7e4] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {m.title}
                   </CardTitle>
-                  <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <div className="rounded-md bg-[#e5f3ef] p-2 text-[#236d62]">
                     <Icon className="h-4 w-4" />
                   </div>
                 </CardHeader>
@@ -237,7 +256,7 @@ export default function HomePage() {
                   <div className="text-2xl font-bold">{m.value}</div>
                   <p className="mt-1 text-xs text-muted-foreground">{m.sub}</p>
                   <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50 text-xs">
-                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="font-medium text-[#287d6d]">
                       {m.trend}
                     </span>
                     <Link
@@ -317,7 +336,7 @@ export default function HomePage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">Quote</TableHead>
+                    <TableHead className="w-25">Quote</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Discount</TableHead>
@@ -343,7 +362,7 @@ export default function HomePage() {
                           {deal.discount}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                      <TableCell className="text-xs text-muted-foreground max-w-50 truncate">
                         {deal.riskReason}
                       </TableCell>
                       <TableCell className="text-right">
