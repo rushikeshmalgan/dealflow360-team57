@@ -29,6 +29,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiClientError, apiRequest } from "@/lib/api-client";
+import {
+  addRecommendationToQuote,
+  dismissRecommendation,
+  fetchRecommendations,
+  type RecommendationViewModel,
+} from "@/lib/recommendations";
 import type { CustomerDto } from "@/modules/customers/application/types";
 import type { PriceListDto } from "@/modules/pricing/application/types";
 import type {
@@ -201,6 +207,17 @@ export default function QuotationsPage() {
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Failed to remove line.");
     }
+  }
+
+  async function handleAddRecommendationToQuote(recommendation: RecommendationViewModel) {
+    if (!selectedQuote) return;
+    await addRecommendationToQuote(recommendation.id, selectedQuote.version);
+    await handleOpenDetail(selectedQuote.id);
+    await loadData();
+  }
+
+  async function handleDismissRecommendation(recommendation: RecommendationViewModel) {
+    await dismissRecommendation(recommendation.id);
   }
 
   async function handleSubmitQuotation() {
@@ -606,7 +623,12 @@ export default function QuotationsPage() {
                       <h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase">
                         Upsell &amp; Cross-Sell
                       </h3>
-                      <RecommendationPane quotationId={selectedQuote.id} />
+                      <RecommendationPane
+                        quotationId={selectedQuote.id}
+                        fetcher={fetchRecommendations}
+                        onAddToQuote={handleAddRecommendationToQuote}
+                        onDismiss={handleDismissRecommendation}
+                      />
                     </div>
                   )}
 

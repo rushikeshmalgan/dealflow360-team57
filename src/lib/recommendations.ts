@@ -1,21 +1,21 @@
 /**
- * Upsell/Cross-Sell recommendation types and a typed mock adapter.
+ * Upsell/Cross-Sell recommendation types and adapters.
  *
- * Per docs/DealFlow360_Technical_Architecture_Document.md, the eventual backend
- * (a RecommendationService behind GET /api/recommendations/:quotationId) returns
- * explainable, ranked candidates with reason codes, applicable promotion, and margin
- * impact, and excludes below-margin/incompatible/inactive products before the UI ever
- * sees them. RecommendationDto here is a superset of the PRD's minimal wire field
- * (`upsell_suggestions[] -> {product_id, name, margin_note}`) so this UI stays
- * compatible with that documented contract while surfacing the richer fields the TAD
- * describes.
+ * Per docs/DealFlow360_Technical_Architecture_Document.md SS15, the backend (RecommendationService,
+ * src/modules/recommendation) is now live behind POST /api/recommendations (generate),
+ * GET /api/recommendations/quotations/:id (list current), and the add-to-quote/dismiss actions
+ * below. RecommendationDto here is a superset of the PRD's minimal wire field
+ * (`upsell_suggestions[] -> {product_id, name, margin_note}`), matching the backend's
+ * RecommendationDto (src/modules/recommendation/application/types.ts) field for field.
  *
- * No scoring, margin calculation, or promotion-ranking logic lives in this file or
- * anywhere under src/components/recommendations — fetchMockRecommendations below is a
- * placeholder returning pre-computed, already-ranked mock data. Swap it for a real
- * fetcher with the same RecommendationFetcher signature once the backend module exists;
- * RecommendationPane does not need to change.
+ * No scoring, margin calculation, or promotion-ranking logic lives in this file or anywhere
+ * under src/components/recommendations — fetchRecommendations below only calls the backend and
+ * reshapes its response; fetchMockRecommendations remains available (e.g. for the pane rendered
+ * standalone, without a real quotation) as a typed placeholder. Both share the same
+ * RecommendationFetcher signature, so RecommendationPane never needs to change.
  */
+
+import { apiRequest } from "@/lib/api-client";
 
 export type RecommendationType = "UPSELL" | "CROSS_SELL";
 
@@ -176,4 +176,52 @@ const MOCK_RECOMMENDATIONS: ReadonlyArray<Omit<RecommendationDto, "quotationId">
 export async function fetchMockRecommendations(quotationId: string): Promise<RecommendationDto[]> {
   await new Promise((resolve) => setTimeout(resolve, 350));
   return MOCK_RECOMMENDATIONS.map((rec) => ({ ...rec, quotationId }));
+}
+
+/** Backend wire shape differs from the frontend's only in one field's nullability — see adaptBackendDto. */
+type BackendRecommendationDto = Omit<RecommendationDto, "marginImpact"> & {
+  marginImpact: { deltaAmount: string; deltaPct: string; resultingMarginPct: string | null };
+};
+
+/**
+ * The backend's `resultingMarginPct` is nullable (a candidate combined with a zero-revenue quote
+ * has no defined margin %, matching calculateQuotationMargin's own `marginPct: number | null`);
+ * this UI has always rendered it as a plain string, so the adapter — not the already-shipped
+ * RecommendationCard — absorbs that difference.
+ */
+function adaptBackendDto(dto: BackendRecommendationDto): RecommendationDto {
+  return {
+    ...dto,
+    marginImpact: { ...dto.marginImpact, resultingMarginPct: dto.marginImpact.resultingMarginPct ?? "0" },
+  };
+}
+
+/** Real backend fetcher (src/modules/recommendation): generates and returns the current top-K
+ * for a quotation. Safe to call repeatedly — generation is idempotent and sticky against prior
+ * Add to Quote/Dismiss decisions (see the Recommendation model's Prisma comment). */
+export async function fetchRecommendations(quotationId: string): Promise<RecommendationDto[]> {
+  const results = await apiRequest<BackendRecommendationDto[]>("/api/recommendations", {
+    method: "POST",
+    body: JSON.stringify({ quotationId }),
+  });
+  return results.map(adaptBackendDto);
+}
+
+export async function addRecommendationToQuote(
+  recommendationId: string,
+  expectedVersion: number,
+): Promise<{ quotationId: string; recommendation: RecommendationDto }> {
+  const result = await apiRequest<{ quotationId: string; recommendation: BackendRecommendationDto }>(
+    `/api/recommendations/${recommendationId}/add-to-quote`,
+    { method: "POST", body: JSON.stringify({ expectedVersion }) },
+  );
+  return { quotationId: result.quotationId, recommendation: adaptBackendDto(result.recommendation) };
+}
+
+export async function dismissRecommendation(recommendationId: string): Promise<RecommendationDto> {
+  const result = await apiRequest<BackendRecommendationDto>(
+    `/api/recommendations/${recommendationId}/dismiss`,
+    { method: "POST" },
+  );
+  return adaptBackendDto(result);
 }
