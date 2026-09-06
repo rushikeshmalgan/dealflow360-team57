@@ -159,6 +159,21 @@ enum DealHealthAlertStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Upsell / Cross-Sell Recommendations (TAD SS15)
+// ---------------------------------------------------------------------------
+
+enum RecommendationType {
+  UPSELL
+  CROSS_SELL
+}
+
+enum RecommendationStatus {
+  PENDING
+  ADDED
+  DISMISSED
+}
+
+// ---------------------------------------------------------------------------
 // Identity
 // ---------------------------------------------------------------------------
 
@@ -180,6 +195,7 @@ model User {
   customerCommentsAuthor   CustomerComment[] @relation("CommentAuthor")
   auditLogs                AuditLog[]        @relation("AuditActor")
   dealHealthAlertsResolved DealHealthAlert[] @relation("DealHealthAlertResolvedBy")
+  recommendationsDismissed Recommendation[]  @relation("RecommendationDismissedBy")
 
   @@index([customerId])
   @@map("users")
@@ -259,6 +275,7 @@ model Product {
   quotationLines    QuotationLine[]
   warehouseStock    WarehouseStock[]
   subscriptionPlans SubscriptionPlan[]
+  recommendations   Recommendation[]
 
   @@index([categoryId])
   @@map("products")
@@ -331,8 +348,9 @@ model DiscountRule {
   createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  tier     CustomerTier?    @relation(fields: [tierId], references: [id])
-  category ProductCategory? @relation(fields: [categoryId], references: [id])
+  tier            CustomerTier?    @relation(fields: [tierId], references: [id])
+  category        ProductCategory? @relation(fields: [categoryId], references: [id])
+  recommendations Recommendation[]
 
   @@index([tierId])
   @@index([categoryId])
@@ -393,6 +411,7 @@ model Quotation {
   subscriptions    Subscription[]
   comments         CustomerComment[]
   dealHealthAlerts DealHealthAlert[]
+  recommendations  Recommendation[]
 
   @@index([status, updatedAt(sort: Desc)])
   @@index([customerId, createdAt(sort: Desc)])
@@ -412,13 +431,14 @@ model QuotationLine {
   createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  quotation        Quotation         @relation(fields: [quotationId], references: [id])
-  product          Product           @relation(fields: [productId], references: [id])
-  variant          ProductVariant?   @relation(fields: [variantId], references: [id])
-  fulfillmentItems FulfillmentItem[]
-  backorders       Backorder[]
-  changeRequests   ChangeRequest[]
-  comments         CustomerComment[]
+  quotation            Quotation         @relation(fields: [quotationId], references: [id])
+  product              Product           @relation(fields: [productId], references: [id])
+  variant              ProductVariant?   @relation(fields: [variantId], references: [id])
+  fulfillmentItems     FulfillmentItem[]
+  backorders           Backorder[]
+  changeRequests       ChangeRequest[]
+  comments             CustomerComment[]
+  recommendationsAdded Recommendation[]
 
   @@index([quotationId])
   @@map("quotation_lines")
@@ -873,4 +893,55 @@ model DealHealthAlert {
   @@unique([quotationId, type])
   @@index([status, priorityScore(sort: Desc)])
   @@map("deal_health_alerts")
+}
+
+/// TAD SS15 (Upsell/cross-sell engine): one persisted candidate per (quotation, product), the
+/// same "sticky decision" shape as DealHealthAlert above. Scoped to `quotationId` rather than the
+/// TAD's `quotation_version_id` sketch: QuotationVersion snapshots (TAD SS9) are created only at
+/// submit time, but this pane lives in the Draft quotation builder (T-Upsell.1's UI), before any
+/// version exists — see src/modules/recommendation/README or the service-layer comment for the
+/// full rationale. `status` makes generation idempotent and dismissal sticky: re-generating never
+/// resurrects a DISMISSED row for the same product, and never re-scores one already ADDED.
+model Recommendation {
+  id                          String               @id @default(uuid()) @db.Uuid
+  quotationId                 String               @map("quotation_id") @db.Uuid
+  productId                   String               @map("product_id") @db.Uuid
+  type                        RecommendationType
+  status                      RecommendationStatus @default(PENDING)
+  /// 1-based display rank within this quotation's PENDING set at generation time (TAD SS15: "top-K").
+  rank                        Int
+  /// Final weighted score in [0,1] — TAD SS15's `score = alpha*coPurchase + beta*promotion + ...`.
+  score                       Decimal              @db.Decimal(6, 5)
+  /// Per-component breakdown + explanation codes (TAD SS15: "Return reasonCodes"); see
+  /// src/modules/recommendation/domain/score.ts and reason-codes.ts for the shape this holds.
+  reasonCodes                 Json                 @map("reason_codes")
+  /// Which active DiscountRule (this app's closest existing "active promotion" concept — see
+  /// domain/score.ts) contributed the `promotion` score component, if any.
+  promotionDiscountRuleId     String?              @map("promotion_discount_rule_id") @db.Uuid
+  projectedMarginDeltaAmount  Decimal              @map("projected_margin_delta_amount") @db.Decimal(14, 2)
+  projectedMarginDeltaPct     Decimal              @map("projected_margin_delta_pct") @db.Decimal(7, 4)
+  projectedResultingMarginPct Decimal?             @map("projected_resulting_margin_pct") @db.Decimal(7, 4)
+  /// Which versioned RECOMMENDATION_CONFIG_* produced this score (mirrors risk_evaluations.config_version).
+  configVersion               Int                  @map("config_version")
+  /// Set once Add to Quote succeeds — the QuotationLine it created via the existing
+  /// QuotationService.addLine path (never a second line-creation code path).
+  addedQuotationLineId        String?              @map("added_quotation_line_id") @db.Uuid
+  dismissedByUserId           String?              @map("dismissed_by_user_id") @db.Uuid
+  dismissedAt                 DateTime?            @map("dismissed_at") @db.Timestamptz(6)
+  createdAt                   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  quotation             Quotation      @relation(fields: [quotationId], references: [id])
+  /// Cascade (unlike every other required FK in this schema, which defaults to Restrict): a
+  /// recommendation is meaningless once its candidate product is gone, and — since candidates are
+  /// scanned across the whole active catalog (TAD SS15/SS16: "10-10,000 candidates") — a
+  /// recommendation can reference any product, not just ones this quotation's own cleanup owns.
+  product               Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  promotionDiscountRule DiscountRule?  @relation(fields: [promotionDiscountRuleId], references: [id])
+  addedQuotationLine    QuotationLine? @relation(fields: [addedQuotationLineId], references: [id])
+  dismissedByUser       User?          @relation("RecommendationDismissedBy", fields: [dismissedByUserId], references: [id])
+
+  @@unique([quotationId, productId])
+  @@index([quotationId, status, rank])
+  @@map("recommendations")
 }
