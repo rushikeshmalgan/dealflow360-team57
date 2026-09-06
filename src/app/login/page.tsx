@@ -42,26 +42,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#171b22] p-4">
-      <Card className="w-full max-w-sm border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-sky-50 p-4">
+      <Card className="w-full max-w-sm border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-400/10 text-sky-400">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-400/10 text-sky-600">
             <ShieldCheck className="h-6 w-6" />
           </div>
-          <CardTitle className="text-xl font-bold text-white">Sign in to DealFlow360</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-xl font-bold text-slate-900">Sign in to DealFlow360</CardTitle>
+          <CardDescription className="text-slate-500">
             Commercial operations, quote-to-cash, and the customer portal.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+              <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                 {error}
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs text-slate-300">
+              <Label htmlFor="email" className="text-xs text-slate-600">
                 Email
               </Label>
               <Input
@@ -72,11 +72,11 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@user.gmail.com"
-                className="border-slate-700 bg-[#232a34] text-slate-100"
+                className="border-sky-100 bg-white text-slate-900"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs text-slate-300">
+              <Label htmlFor="password" className="text-xs text-slate-600">
                 Password
               </Label>
               <Input
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="border-slate-700 bg-[#232a34] text-slate-100"
+                className="border-sky-100 bg-white text-slate-900"
               />
             </div>
             <Button type="submit" disabled={submitting} className="w-full bg-sky-500 font-semibold text-white hover:bg-sky-400">

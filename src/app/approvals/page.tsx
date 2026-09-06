@@ -30,9 +30,9 @@ import { ApiClientError, apiRequest } from "@/lib/api-client";
 import type { ApprovalQueueItemDto, ApprovalRuleDto } from "@/modules/approval/application/types";
 
 const RISK_BAND_COLORS: Record<string, string> = {
-  LOW: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  MEDIUM: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  HIGH: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+  LOW: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
+  MEDIUM: "border-amber-400/30 bg-amber-400/10 text-amber-700",
+  HIGH: "border-rose-400/30 bg-rose-400/10 text-rose-700",
 };
 
 export default function ApprovalsPage() {
@@ -182,21 +182,21 @@ export default function ApprovalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
         {/* Header */}
-        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="rounded-xl border border-sky-200 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <span className="text-xs font-semibold tracking-wider text-sky-400 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-sky-600 uppercase">
                 Governance Center
               </span>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Approval Rules
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
                 Configure risk-based approval routing rules. Each risk band (LOW, MEDIUM, HIGH)
                 can have a chain of approval steps (Manager → Finance Ops).
               </p>
@@ -207,7 +207,7 @@ export default function ApprovalsPage() {
                 size="sm"
                 onClick={loadData}
                 disabled={loading}
-                className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className="border-sky-200 bg-white text-slate-800 hover:bg-sky-100"
               >
                 <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -228,15 +228,15 @@ export default function ApprovalsPage() {
             {["LOW", "MEDIUM", "HIGH"].map((band) => {
               const rule = (rules ?? []).find((r) => r.riskBand === band);
               return (
-                <div key={band} className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-                  <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+                <div key={band} className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                     <span>{band} Risk</span>
-                    <Shield className={`h-4 w-4 ${band === "LOW" ? "text-emerald-400" : band === "MEDIUM" ? "text-amber-400" : "text-rose-400"}`} />
+                    <Shield className={`h-4 w-4 ${band === "LOW" ? "text-emerald-600" : band === "MEDIUM" ? "text-amber-600" : "text-rose-600"}`} />
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-white">
+                  <div className="mt-2 text-2xl font-bold text-slate-900">
                     {rule ? `${rule.steps.length} step${rule.steps.length === 1 ? "" : "s"}` : "—"}
                   </div>
-                  <div className="mt-1 text-xs text-slate-400">
+                  <div className="mt-1 text-xs text-slate-500">
                     {rule ? (rule.isActive ? "Active" : "Inactive") : "Not configured"}
                   </div>
                 </div>
@@ -246,16 +246,16 @@ export default function ApprovalsPage() {
         </section>
 
         {error && (
-          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-300">
+          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
         {/* Pending Approvals Queue (T8.2/T8.3) — visible to Manager/Finance Ops/Admin only */}
         {canDecide && (
-          <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
+          <section className="rounded-xl border border-sky-100 bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-bold tracking-wider text-slate-300 uppercase">
+              <h2 className="text-sm font-bold tracking-wider text-slate-600 uppercase">
                 Pending Approvals — {me?.role.replace("_", " ")} Queue
               </h2>
               <Button
@@ -263,7 +263,7 @@ export default function ApprovalsPage() {
                 size="sm"
                 onClick={loadQueue}
                 disabled={queueLoading}
-                className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className="border-sky-200 bg-white text-slate-800 hover:bg-sky-100"
               >
                 <RefreshCw className={`mr-1.5 h-4 w-4 ${queueLoading ? "animate-spin" : ""}`} />
                 Refresh
@@ -271,15 +271,15 @@ export default function ApprovalsPage() {
             </div>
 
             {queueError && (
-              <div className="mb-4 rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+              <div className="mb-4 rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                 {queueError}
               </div>
             )}
 
             {queueLoading ? (
-              <div className="py-8 text-center text-sm text-slate-400">Loading queue...</div>
+              <div className="py-8 text-center text-sm text-slate-500">Loading queue...</div>
             ) : (queue ?? []).length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400">
+              <div className="py-8 text-center text-sm text-slate-500">
                 Nothing pending your decision right now.
               </div>
             ) : (
@@ -287,27 +287,27 @@ export default function ApprovalsPage() {
                 {(queue ?? []).map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4"
+                    className="rounded-lg border border-sky-100 bg-sky-50 p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-sky-400">
+                          <span className="font-mono text-sm font-bold text-sky-600">
                             {item.quotation.code}
                           </span>
                           <Badge className={`border px-2 py-0.5 text-[10px] font-semibold ${RISK_BAND_COLORS[item.riskBand] ?? ""}`}>
                             {item.riskBand} RISK
                           </Badge>
-                          <Badge className="border border-slate-500/30 bg-slate-500/10 text-[10px] text-slate-300">
+                          <Badge className="border border-slate-300 bg-slate-100 text-[10px] text-slate-600">
                             Step {item.stepOrder} · {item.role.replace("_", " ")}
                           </Badge>
                           {!item.isActionable && (
-                            <Badge className="border border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">
+                            <Badge className="border border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700">
                               Waiting on earlier step
                             </Badge>
                           )}
                         </div>
-                        <div className="mt-1 text-xs text-slate-400">
+                        <div className="mt-1 text-xs text-slate-500">
                           {item.quotation.customer.name} · Rep: {item.quotation.salesRep.email} · $
                           {Number(item.quotation.netBeforeTax).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </div>
@@ -315,13 +315,13 @@ export default function ApprovalsPage() {
                     </div>
 
                     {item.isActionable && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-sky-100 pt-3">
                         <input
                           type="text"
                           placeholder="Optional reason / note"
                           value={reasonById[item.id] ?? ""}
                           onChange={(e) => setReasonById((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                          className="min-w-[180px] flex-1 rounded-md border border-slate-700 bg-[#232a34] px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500"
+                          className="min-w-[180px] flex-1 rounded-md border border-sky-100 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-500"
                         />
                         <Button
                           size="sm"
@@ -337,7 +337,7 @@ export default function ApprovalsPage() {
                           disabled={decidingId === item.id}
                           onClick={() => handleDecision(item, "RETURN")}
                           variant="outline"
-                          className="border-amber-700/50 bg-amber-950/20 text-xs font-semibold text-amber-300 hover:bg-amber-900/40"
+                          className="border-amber-700/50 bg-amber-950/20 text-xs font-semibold text-amber-700 hover:bg-amber-900/40"
                         >
                           <Undo2 className="mr-1 h-3.5 w-3.5" />
                           Return
@@ -347,7 +347,7 @@ export default function ApprovalsPage() {
                           disabled={decidingId === item.id}
                           onClick={() => handleDecision(item, "REJECT")}
                           variant="outline"
-                          className="border-rose-900/40 bg-rose-950/20 text-xs font-semibold text-rose-300 hover:bg-rose-900/40"
+                          className="border-rose-900/40 bg-rose-950/20 text-xs font-semibold text-rose-700 hover:bg-rose-900/40"
                         >
                           <XCircle className="mr-1 h-3.5 w-3.5" />
                           Reject
@@ -362,34 +362,34 @@ export default function ApprovalsPage() {
         )}
 
         {/* Rules Table */}
-        <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
-          <h2 className="mb-4 text-sm font-bold tracking-wider text-slate-300 uppercase">
+        <section className="rounded-xl border border-sky-100 bg-white p-6 shadow-xl">
+          <h2 className="mb-4 text-sm font-bold tracking-wider text-slate-600 uppercase">
             Configured Rules
           </h2>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-slate-400">Loading rules...</div>
+            <div className="py-12 text-center text-sm text-slate-500">Loading rules...</div>
           ) : (rules ?? []).length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">
+            <div className="py-12 text-center text-sm text-slate-500">
               No approval rules configured yet.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="text-slate-300">Risk Band</TableHead>
-                    <TableHead className="text-slate-300">Approval Chain</TableHead>
-                    <TableHead className="text-slate-300">Status</TableHead>
-                    <TableHead className="text-slate-300">Created</TableHead>
-                    <TableHead className="text-right text-slate-300">Actions</TableHead>
+                  <TableRow className="border-sky-100 hover:bg-transparent">
+                    <TableHead className="text-slate-600">Risk Band</TableHead>
+                    <TableHead className="text-slate-600">Approval Chain</TableHead>
+                    <TableHead className="text-slate-600">Status</TableHead>
+                    <TableHead className="text-slate-600">Created</TableHead>
+                    <TableHead className="text-right text-slate-600">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(rules ?? []).map((rule) => (
                     <TableRow
                       key={rule.id}
-                      className="border-slate-800 transition-colors hover:bg-slate-800/50"
+                      className="border-sky-100 transition-colors hover:bg-sky-50"
                     >
                       <TableCell>
                         <Badge className={`border px-2 py-0.5 text-xs font-semibold ${RISK_BAND_COLORS[rule.riskBand] ?? ""}`}>
@@ -401,20 +401,20 @@ export default function ApprovalsPage() {
                           {rule.steps
                             .sort((a, b) => a.stepOrder - b.stepOrder)
                             .map((step, i) => (
-                              <span key={step.id} className="flex items-center gap-1 text-xs text-slate-300">
+                              <span key={step.id} className="flex items-center gap-1 text-xs text-slate-600">
                                 {i > 0 && <span className="text-slate-500">→</span>}
-                                <ShieldCheck className="h-3 w-3 text-sky-400" />
+                                <ShieldCheck className="h-3 w-3 text-sky-600" />
                                 {step.role === "MANAGER" ? "Manager" : "Finance Ops"}
                               </span>
                             ))}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`border text-xs ${rule.isActive ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-slate-400/30 bg-slate-400/10 text-slate-300"}`}>
+                        <Badge className={`border text-xs ${rule.isActive ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-700" : "border-slate-300 bg-slate-100 text-slate-600"}`}>
                           {rule.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-slate-400">
+                      <TableCell className="text-xs text-slate-500">
                         {new Date(rule.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
@@ -423,7 +423,7 @@ export default function ApprovalsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => openEdit(rule)}
-                            className="border-slate-700 bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700"
+                            className="border-sky-100 bg-sky-50 text-xs text-slate-800 hover:bg-sky-100"
                           >
                             Edit
                           </Button>
@@ -431,7 +431,7 @@ export default function ApprovalsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(rule.id)}
-                            className="border-rose-900/40 bg-rose-950/20 text-xs text-rose-300 hover:bg-rose-900/40"
+                            className="border-rose-900/40 bg-rose-950/20 text-xs text-rose-700 hover:bg-rose-900/40"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -449,21 +449,21 @@ export default function ApprovalsPage() {
       {/* Create Modal */}
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <CardTitle className="text-lg font-bold text-white">Create Approval Rule</CardTitle>
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <CardTitle className="text-lg font-bold text-slate-900">Create Approval Rule</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleCreate} className="space-y-4">
                 {createError && (
-                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                     {createError}
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Risk Band</Label>
+                  <Label className="text-xs text-slate-600">Risk Band</Label>
                   <select value={newRiskBand} onChange={(e) => setNewRiskBand(e.target.value as "LOW" | "MEDIUM" | "HIGH")}
-                    className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100">
+                    className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900">
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
                     <option value="HIGH">HIGH</option>
@@ -471,10 +471,10 @@ export default function ApprovalsPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-slate-300">Approval Steps</Label>
+                    <Label className="text-xs text-slate-600">Approval Steps</Label>
                     <Button type="button" variant="outline" size="sm"
                       onClick={() => setNewSteps([...newSteps, { role: "FINANCE_OPS" }])}
-                      className="border-slate-700 text-xs text-slate-300">
+                      className="border-sky-100 text-xs text-slate-600">
                       + Add Step
                     </Button>
                   </div>
@@ -483,21 +483,21 @@ export default function ApprovalsPage() {
                       <span className="text-xs text-slate-500 w-16">Step {i + 1}</span>
                       <select value={step.role}
                         onChange={(e) => setNewSteps(newSteps.map((s, idx) => idx === i ? { role: e.target.value as "MANAGER" | "FINANCE_OPS" } : s))}
-                        className="flex-1 rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100">
+                        className="flex-1 rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900">
                         <option value="MANAGER">Manager</option>
                         <option value="FINANCE_OPS">Finance Ops</option>
                       </select>
                       {newSteps.length > 1 && (
                         <Button type="button" variant="ghost" size="sm"
                           onClick={() => setNewSteps(newSteps.filter((_, idx) => idx !== i))}
-                          className="text-rose-400 h-8 w-8 p-0">×</Button>
+                          className="text-rose-600 h-8 w-8 p-0">×</Button>
                       )}
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsCreating(false)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800">Cancel</Button>
+                    className="border-sky-100 text-slate-600 hover:bg-white">Cancel</Button>
                   <Button type="submit" disabled={createSubmitting}
                     className="bg-sky-500 font-semibold text-white hover:bg-sky-400">
                     {createSubmitting ? "Creating..." : "Create Rule"}
@@ -512,54 +512,54 @@ export default function ApprovalsPage() {
       {/* Edit Modal */}
       {editingRule && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <CardTitle className="text-lg font-bold text-white">
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Edit Rule — {editingRule.riskBand}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleUpdate} className="space-y-4">
                 {editError && (
-                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                     {editError}
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Label className="text-xs text-slate-300">Active</Label>
+                  <Label className="text-xs text-slate-600">Active</Label>
                   <button type="button"
                     onClick={() => setEditIsActive(!editIsActive)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${editIsActive ? "bg-emerald-500" : "bg-slate-600"}`}>
+                    className={`relative h-6 w-11 rounded-full transition-colors ${editIsActive ? "bg-emerald-500" : "bg-sky-200"}`}>
                     <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${editIsActive ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-slate-300">Approval Steps</Label>
+                    <Label className="text-xs text-slate-600">Approval Steps</Label>
                     <Button type="button" variant="outline" size="sm"
                       onClick={() => setEditSteps([...editSteps, { role: "FINANCE_OPS" }])}
-                      className="border-slate-700 text-xs text-slate-300">+ Add Step</Button>
+                      className="border-sky-100 text-xs text-slate-600">+ Add Step</Button>
                   </div>
                   {editSteps.map((step, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-xs text-slate-500 w-16">Step {i + 1}</span>
                       <select value={step.role}
                         onChange={(e) => setEditSteps(editSteps.map((s, idx) => idx === i ? { role: e.target.value as "MANAGER" | "FINANCE_OPS" } : s))}
-                        className="flex-1 rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100">
+                        className="flex-1 rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900">
                         <option value="MANAGER">Manager</option>
                         <option value="FINANCE_OPS">Finance Ops</option>
                       </select>
                       {editSteps.length > 1 && (
                         <Button type="button" variant="ghost" size="sm"
                           onClick={() => setEditSteps(editSteps.filter((_, idx) => idx !== i))}
-                          className="text-rose-400 h-8 w-8 p-0">×</Button>
+                          className="text-rose-600 h-8 w-8 p-0">×</Button>
                       )}
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setEditingRule(null)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800">Cancel</Button>
+                    className="border-sky-100 text-slate-600 hover:bg-white">Cancel</Button>
                   <Button type="submit" disabled={editSubmitting}
                     className="bg-sky-500 font-semibold text-white hover:bg-sky-400">
                     {editSubmitting ? "Saving..." : "Save Changes"}

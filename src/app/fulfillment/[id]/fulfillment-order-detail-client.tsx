@@ -52,17 +52,17 @@ const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
-  DRAFT: "border-slate-400/30 bg-slate-400/10 text-slate-700 dark:text-slate-200",
-  SUBMITTED: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-200",
-  PENDING_APPROVAL: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-200",
-  APPROVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
-  REJECTED: "border-rose-400/30 bg-rose-400/10 text-rose-700 dark:text-rose-200",
-  SENT_TO_CUSTOMER: "border-cyan-400/30 bg-cyan-400/10 text-cyan-700 dark:text-cyan-200",
-  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-200",
-  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-200",
-  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
+  DRAFT: "border-slate-300 bg-slate-100 text-slate-700 dark:text-slate-800",
+  SUBMITTED: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-700",
+  PENDING_APPROVAL: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-700",
+  APPROVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700",
+  REJECTED: "border-rose-400/30 bg-rose-400/10 text-rose-700 dark:text-rose-700",
+  SENT_TO_CUSTOMER: "border-cyan-400/30 bg-cyan-400/10 text-cyan-700 dark:text-cyan-700",
+  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-700",
+  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-700",
+  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700",
   FULFILLMENT: "border-blue-400/30 bg-blue-400/10 text-blue-700 dark:text-blue-200",
-  BILLING: "border-indigo-400/30 bg-indigo-400/10 text-indigo-700 dark:text-indigo-200",
+  BILLING: "border-indigo-400/30 bg-indigo-400/10 text-indigo-700 dark:text-indigo-700",
   COMPLETED: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-100",
 };
 
@@ -82,18 +82,18 @@ const BACKORDER_STATUS_LABEL: Record<BackorderStatus, string> = {
 };
 
 const BACKORDER_STATUS_BADGE: Record<BackorderStatus, string> = {
-  OPEN: "border-rose-400/30 bg-rose-400/10 text-rose-700 dark:text-rose-200",
-  CONSOLIDATING: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-200",
-  RESOLVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
+  OPEN: "border-rose-400/30 bg-rose-400/10 text-rose-700 dark:text-rose-700",
+  CONSOLIDATING: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-700",
+  RESOLVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700",
 };
 
 const BILLING_STATUS_BADGE: Record<BillingStatus, string> = {
-  DRAFT: "border-slate-400/30 bg-slate-400/10 text-slate-700 dark:text-slate-200",
-  ISSUED: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-200",
-  PARTIALLY_PAID: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-200",
-  PAID: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
-  VOID: "border-slate-400/30 bg-slate-400/10 text-slate-700 dark:text-slate-200",
-  CREDITED: "border-indigo-400/30 bg-indigo-400/10 text-indigo-700 dark:text-indigo-200",
+  DRAFT: "border-slate-300 bg-slate-100 text-slate-700 dark:text-slate-800",
+  ISSUED: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-700",
+  PARTIALLY_PAID: "border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-700",
+  PAID: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700",
+  VOID: "border-slate-300 bg-slate-100 text-slate-700 dark:text-slate-800",
+  CREDITED: "border-indigo-400/30 bg-indigo-400/10 text-indigo-700 dark:text-indigo-700",
 };
 
 const LINE_STATUS_LABEL: Record<"PENDING" | "ALLOCATED" | "BACKORDERED", string> = {
@@ -256,7 +256,7 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
         </div>
 
         {actionSuccess && (
-          <p className="mb-4 flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+          <p className="mb-4 flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-600">
             <CheckCircle2 className="size-4" />
             {actionSuccess}
           </p>
@@ -265,7 +265,7 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
 
         {openBackorders.length > 0 && (
           <div className="mb-6 flex items-start gap-2 rounded-lg border border-rose-400/30 bg-rose-400/10 p-3 text-sm">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-600 dark:text-rose-300" />
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-600 dark:text-rose-700" />
             <div>
               <p className="font-medium">Backorder needs attention</p>
               <p className="text-muted-foreground">
@@ -310,8 +310,8 @@ export function FulfillmentOrderDetailClient({ orderId }: { orderId: string }) {
                           line.lineStatus === "BACKORDERED"
                             ? BACKORDER_STATUS_BADGE.OPEN
                             : line.lineStatus === "ALLOCATED"
-                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200"
-                              : "border-slate-400/30 bg-slate-400/10 text-slate-700 dark:text-slate-200"
+                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700"
+                              : "border-slate-300 bg-slate-100 text-slate-700 dark:text-slate-800"
                         }
                       >
                         {LINE_STATUS_LABEL[line.lineStatus]}

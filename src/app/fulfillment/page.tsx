@@ -24,17 +24,17 @@ import type {
 } from "@/modules/fulfillment/application/types";
 
 const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
-  DRAFT: "border-slate-400/30 bg-slate-400/10 text-slate-200",
-  SUBMITTED: "border-sky-400/30 bg-sky-400/10 text-sky-200",
-  PENDING_APPROVAL: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  APPROVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  REJECTED: "border-rose-400/30 bg-rose-400/10 text-rose-200",
-  SENT_TO_CUSTOMER: "border-cyan-400/30 bg-cyan-400/10 text-cyan-200",
-  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-200",
-  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-200",
-  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+  DRAFT: "border-slate-300 bg-slate-100 text-slate-800",
+  SUBMITTED: "border-sky-400/30 bg-sky-400/10 text-sky-700",
+  PENDING_APPROVAL: "border-amber-400/30 bg-amber-400/10 text-amber-700",
+  APPROVED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
+  REJECTED: "border-rose-400/30 bg-rose-400/10 text-rose-700",
+  SENT_TO_CUSTOMER: "border-cyan-400/30 bg-cyan-400/10 text-cyan-700",
+  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700",
+  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700",
+  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
   FULFILLMENT: "border-blue-400/30 bg-blue-400/10 text-blue-200",
-  BILLING: "border-indigo-400/30 bg-indigo-400/10 text-indigo-200",
+  BILLING: "border-indigo-400/30 bg-indigo-400/10 text-indigo-700",
   COMPLETED: "border-emerald-500/40 bg-emerald-500/15 text-emerald-100",
 };
 
@@ -48,12 +48,12 @@ const FULFILLMENT_STATUS_LABEL: Record<FulfillmentStatus, string> = {
 };
 
 const FULFILLMENT_STATUS_BADGE: Record<FulfillmentStatus, string> = {
-  PENDING: "border-slate-400/30 bg-slate-400/10 text-slate-200",
-  SPLIT_PROPOSED: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  PARTIALLY_ALLOCATED: "border-orange-400/30 bg-orange-400/10 text-orange-200",
-  ALLOCATED: "border-sky-400/30 bg-sky-400/10 text-sky-200",
-  BACKORDERED: "border-rose-400/30 bg-rose-400/10 text-rose-200",
-  SHIPPED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+  PENDING: "border-slate-300 bg-slate-100 text-slate-800",
+  SPLIT_PROPOSED: "border-amber-400/30 bg-amber-400/10 text-amber-700",
+  PARTIALLY_ALLOCATED: "border-orange-400/30 bg-orange-400/10 text-orange-700",
+  ALLOCATED: "border-sky-400/30 bg-sky-400/10 text-sky-700",
+  BACKORDERED: "border-rose-400/30 bg-rose-400/10 text-rose-700",
+  SHIPPED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
 };
 
 export default function FulfillmentPage() {
@@ -194,7 +194,7 @@ export default function FulfillmentPage() {
                           <span className="text-sm text-muted-foreground">Not started</span>
                         )}
                         {order.hasOpenBackorder && (
-                          <Badge variant="outline" className="ml-1.5 border-rose-400/30 bg-rose-400/10 text-rose-200">
+                          <Badge variant="outline" className="ml-1.5 border-rose-400/30 bg-rose-400/10 text-rose-700">
                             Backorder
                           </Badge>
                         )}

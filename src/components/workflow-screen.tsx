@@ -115,10 +115,10 @@ const SCREEN_DATA: Record<string, {
 };
 
 const toneClasses = {
-  blue: "border-sky-400/30 bg-sky-400/10 text-sky-200",
-  green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  amber: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+  blue: "border-sky-400/30 bg-sky-400/10 text-sky-700",
+  green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
+  amber: "border-amber-400/30 bg-amber-400/10 text-amber-700",
+  red: "border-rose-400/30 bg-rose-400/10 text-rose-700",
 };
 
 const quotationColumns = [
@@ -132,18 +132,18 @@ const quotationColumns = [
 export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA }) {
   const data = SCREEN_DATA[screen];
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
-        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="rounded-xl border border-sky-200 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">{data.eyebrow}</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-700">{data.eyebrow}</p>
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{data.title}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{data.description}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{data.description}</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="border-slate-600 bg-transparent text-slate-200 hover:bg-slate-800"><Download className="mr-2 h-4 w-4" />Export</Button>
+              <Button variant="outline" className="border-sky-200 bg-transparent text-slate-800 hover:bg-white"><Download className="mr-2 h-4 w-4" />Export</Button>
               <Button className="bg-sky-500 text-slate-950 hover:bg-sky-400"><Plus className="mr-2 h-4 w-4" />{data.action}</Button>
             </div>
           </div>
@@ -151,11 +151,11 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
 
         <div className="grid gap-4 md:grid-cols-3">
           {data.metrics.map(([label, value, note]) => (
-            <Card key={label} className="border-slate-600/60 bg-[#232a34]">
+            <Card key={label} className="border-sky-200 bg-white">
               <CardContent className="p-5">
                 <p className="text-xs uppercase tracking-wider text-slate-500">{label}</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-50">{value}</p>
-                <p className="mt-1 text-xs text-sky-300">{note}</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+                <p className="mt-1 text-xs text-sky-700">{note}</p>
               </CardContent>
             </Card>
           ))}
@@ -163,21 +163,21 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
 
         {screen === "quotations" && <QuotationKanban />}
 
-        <Card className="border-slate-600/60 bg-[#232a34]">
-          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-slate-800">
+        <Card className="border-sky-200 bg-white">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-sky-100">
             <CardTitle className="text-base">Live work queue</CardTitle>
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-              <Input placeholder="Search records" className="border-slate-600 bg-[#171b22] pl-9 text-slate-100 placeholder:text-slate-500" />
+              <Input placeholder="Search records" className="border-sky-200 bg-sky-50 pl-9 text-slate-900 placeholder:text-slate-500" />
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-sky-100">
               {data.rows.map((row) => (
-                <div key={row.id} className="grid gap-3 px-5 py-4 transition-colors hover:bg-slate-800/40 md:grid-cols-[1fr_1.4fr_auto_auto_auto] md:items-center">
-                  <div><p className="font-semibold text-slate-100">{row.id}</p><p className="text-xs text-slate-500">{row.name}</p></div>
-                  <p className="text-sm text-slate-400">{row.detail}</p>
-                  <p className="font-semibold text-slate-100">{row.value}</p>
+                <div key={row.id} className="grid gap-3 px-5 py-4 transition-colors hover:bg-sky-50 md:grid-cols-[1fr_1.4fr_auto_auto_auto] md:items-center">
+                  <div><p className="font-semibold text-slate-900">{row.id}</p><p className="text-xs text-slate-500">{row.name}</p></div>
+                  <p className="text-sm text-slate-500">{row.detail}</p>
+                  <p className="font-semibold text-slate-900">{row.value}</p>
                   <Badge className={cn("w-fit border", toneClasses[row.tone])}>{row.status}</Badge>
                   <Link href={`/${screen}`} className={buttonVariants({ variant: "ghost", size: "sm" })}><ArrowRight className="h-4 w-4" /></Link>
                 </div>
@@ -186,8 +186,8 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-600/60 bg-[#202631] px-4 py-3 text-xs text-slate-400">
-          {data.title === "Approval queue" ? <ShieldAlert className="h-4 w-4 text-amber-300" /> : <CheckCircle2 className="h-4 w-4 text-emerald-300" />}
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs text-slate-500">
+          {data.title === "Approval queue" ? <ShieldAlert className="h-4 w-4 text-amber-700" /> : <CheckCircle2 className="h-4 w-4 text-emerald-700" />}
           <span>Workspace data is synced with the quote-to-cash workflow.</span>
           <span className="ml-auto flex items-center gap-1 text-slate-500"><Clock3 className="h-3.5 w-3.5" />Updated moments ago</span>
         </div>
@@ -198,33 +198,33 @@ export function WorkflowScreen({ screen }: { screen: keyof typeof SCREEN_DATA })
 
 function QuotationKanban() {
   return (
-    <Card className="border-slate-600/60 bg-[#232a34]">
-      <CardHeader className="border-b border-slate-600/60 bg-[#202631]">
+    <Card className="border-sky-200 bg-white">
+      <CardHeader className="border-b border-sky-200 bg-sky-50">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base">Quotation Kanban</CardTitle>
             <p className="mt-1 text-xs text-slate-500">Move deals through the quote-to-cash stages.</p>
           </div>
-          <Badge className="border border-sky-400/30 bg-sky-400/10 text-sky-200">7 active</Badge>
+          <Badge className="border border-sky-400/30 bg-sky-400/10 text-sky-700">7 active</Badge>
         </div>
       </CardHeader>
       <CardContent className="overflow-x-auto p-4 sm:p-5">
         <div className="grid min-h-[560px] min-w-[1180px] grid-cols-5 gap-3">
           {quotationColumns.map((column) => (
-            <div key={column.title} className="rounded-md border border-slate-600/70 bg-[#171b22] p-2">
-              <div className="mb-3 flex items-center justify-between border-b border-slate-700 px-2 py-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-200">{column.title}</span>
+            <div key={column.title} className="rounded-md border border-sky-200 bg-sky-50 p-2">
+              <div className="mb-3 flex items-center justify-between border-b border-sky-100 px-2 py-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">{column.title}</span>
                 <span className="rounded bg-sky-400 px-1.5 py-0.5 text-[10px] font-bold text-slate-950">{column.cards.length}</span>
               </div>
-              <div className="min-h-[470px] space-y-2 rounded border border-dashed border-slate-700/80 p-1">
+              <div className="min-h-[470px] space-y-2 rounded border border-dashed border-sky-100 p-1">
                 {column.cards.map(([id, customer, amount]) => (
-                  <div key={id} className="rounded border border-slate-600 bg-[#2a323d] p-3 shadow-sm transition-colors hover:border-sky-300">
+                  <div key={id} className="rounded border border-sky-200 bg-sky-100 p-3 shadow-sm transition-colors hover:border-sky-300">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-bold text-sky-300">{id}</span>
+                      <span className="font-mono text-[11px] font-bold text-sky-700">{id}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-600" />
                     </div>
-                    <p className="mt-2 text-xs font-medium text-slate-100">{customer}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400">{amount}</p>
+                    <p className="mt-2 text-xs font-medium text-slate-900">{customer}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{amount}</p>
                   </div>
                 ))}
               </div>

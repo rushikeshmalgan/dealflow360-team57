@@ -69,58 +69,58 @@ export function NegotiationPanel({
   }
 
   if (pending === undefined) {
-    return <div className="rounded-lg border border-slate-800 bg-[#232a34] p-3 text-xs text-slate-400">Loading negotiation…</div>;
+    return <div className="rounded-lg border border-sky-100 bg-white p-3 text-xs text-slate-500">Loading negotiation…</div>;
   }
   if (!pending) return null;
 
   return (
     <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-violet-200">
+      <div className="flex items-center gap-2 text-sm font-semibold text-violet-700">
         <MessageSquare className="h-4 w-4" />
         Customer Negotiation Request
       </div>
 
       {error && (
-        <div className="mt-2 rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">{error}</div>
+        <div className="mt-2 rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">{error}</div>
       )}
 
-      <div className="mt-3 space-y-2 text-xs text-slate-300">
+      <div className="mt-3 space-y-2 text-xs text-slate-600">
         {pending.counterDiscountPct && (
           <div>
-            <span className="font-semibold text-white">Counter-discount requested:</span>{" "}
+            <span className="font-semibold text-slate-900">Counter-discount requested:</span>{" "}
             {pending.counterDiscountPct}%
           </div>
         )}
         {pending.requestedDeliveryDate && (
           <div>
-            <span className="font-semibold text-white">Requested delivery:</span> {pending.requestedDeliveryDate}
+            <span className="font-semibold text-slate-900">Requested delivery:</span> {pending.requestedDeliveryDate}
           </div>
         )}
         {pending.generalComment && (
           <div>
-            <span className="font-semibold text-white">Comment:</span> {pending.generalComment}
+            <span className="font-semibold text-slate-900">Comment:</span> {pending.generalComment}
           </div>
         )}
         {pending.lineComments.map((c) => (
-          <div key={c.id} className="rounded border border-slate-800 bg-[#1c222b] p-2">
-            <span className="font-semibold text-white">Line comment:</span> {c.comment}
+          <div key={c.id} className="rounded border border-sky-100 bg-sky-50 p-2">
+            <span className="font-semibold text-slate-900">Line comment:</span> {c.comment}
           </div>
         ))}
         {pending.changeRequests.map((cr) => (
-          <div key={cr.id} className="rounded border border-slate-800 bg-[#1c222b] p-2">
-            <span className="font-semibold text-white">{cr.requestType.replace(/_/g, " ")}:</span>{" "}
+          <div key={cr.id} className="rounded border border-sky-100 bg-sky-50 p-2">
+            <span className="font-semibold text-slate-900">{cr.requestType.replace(/_/g, " ")}:</span>{" "}
             {cr.note ?? "—"}
           </div>
         ))}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-sky-100 pt-3">
         <input
           type="text"
           placeholder="Optional note to customer"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="min-w-45 flex-1 rounded-md border border-slate-700 bg-[#232a34] px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500"
+          className="min-w-45 flex-1 rounded-md border border-sky-100 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-500"
         />
         <Button
           size="sm"
@@ -136,7 +136,7 @@ export function NegotiationPanel({
           variant="outline"
           disabled={submitting}
           onClick={() => handleResolve("DECLINE")}
-          className="border-rose-900/40 bg-rose-950/20 text-xs font-semibold text-rose-300 hover:bg-rose-900/40"
+          className="border-rose-900/40 bg-rose-950/20 text-xs font-semibold text-rose-700 hover:bg-rose-900/40"
         >
           <XCircle className="mr-1 h-3.5 w-3.5" />
           Decline

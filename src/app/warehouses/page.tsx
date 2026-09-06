@@ -175,23 +175,23 @@ export default function WarehousesPage() {
   const lowStockCount = stockItems.filter((s) => (s.availableQty - s.reservedQty) < 15).length;
 
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
       <main className="mx-auto max-w-7xl space-y-6 p-6">
         {/* Header section */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-sky-100 pb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-900">
               Warehouse & Stock Management
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-500">
               Epic 4: Configure distribution centers, shipping cost weightings, and real-time inventory allocation.
             </p>
           </div>
           <div className="flex gap-2">
             <Button
               onClick={() => setIsCreatingWarehouse(!isCreatingWarehouse)}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+              className="bg-blue-600 hover:bg-blue-700 text-slate-900 shadow-xs"
             >
               {isCreatingWarehouse ? "Cancel" : "+ Add Warehouse"}
             </Button>
@@ -208,28 +208,28 @@ export default function WarehousesPage() {
           </div>
         )}
         {successMessage && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-300">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-700">
             {successMessage}
           </div>
         )}
 
         {/* KPI Metrics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-sky-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Active Warehouses
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-900">
                 {warehouses.filter((w) => w.isActive).length}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Total distribution hubs</p>
+              <p className="text-xs text-slate-500 mt-1">Total distribution hubs</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-sky-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Total Available Units
@@ -239,11 +239,11 @@ export default function WarehousesPage() {
               <div className="text-2xl font-bold text-blue-600">
                 {totalAvailable}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Across all active hubs</p>
+              <p className="text-xs text-slate-500 mt-1">Across all active hubs</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-sky-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Reserved for Orders
@@ -253,11 +253,11 @@ export default function WarehousesPage() {
               <div className="text-2xl font-bold text-amber-600">
                 {totalReserved}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Pending quotation dispatch</p>
+              <p className="text-xs text-slate-500 mt-1">Pending quotation dispatch</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-sky-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Low Stock SKUs
@@ -267,7 +267,7 @@ export default function WarehousesPage() {
               <div className="text-2xl font-bold text-rose-600">
                 {lowStockCount}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Below reorder threshold</p>
+              <p className="text-xs text-slate-500 mt-1">Below reorder threshold</p>
             </CardContent>
           </Card>
         </div>
@@ -331,7 +331,7 @@ export default function WarehousesPage() {
                   <Button type="button" variant="outline" onClick={() => setIsCreatingWarehouse(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submittingWh} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button type="submit" disabled={submittingWh} className="bg-blue-600 hover:bg-blue-700 text-slate-900">
                     {submittingWh ? "Saving..." : "Save Warehouse"}
                   </Button>
                 </div>
@@ -355,7 +355,7 @@ export default function WarehousesPage() {
                 <Label htmlFor="wh-filter" className="text-xs font-medium text-slate-500">Filter Hub:</Label>
                 <select
                   id="wh-filter"
-                  className="h-9 rounded-md border border-slate-700 bg-[#101f33] px-3 py-1 text-sm text-slate-100"
+                  className="h-9 rounded-md border border-sky-100 bg-sky-50 px-3 py-1 text-sm text-slate-900"
                   value={selectedWarehouseFilter}
                   onChange={(e) => setSelectedWarehouseFilter(e.target.value)}
                 >
@@ -365,12 +365,12 @@ export default function WarehousesPage() {
                   ))}
                 </select>
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 Showing {filteredStock.length} SKU record{filteredStock.length === 1 ? "" : "s"}
               </span>
             </div>
 
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-slate-200 dark:border-sky-100">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -396,18 +396,18 @@ export default function WarehousesPage() {
                       const ratio = item.availableQty > 0 ? (item.reservedQty / item.availableQty) * 100 : 0;
                       return (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                          <TableCell className="font-medium text-slate-900 dark:text-slate-900">
                             {item.warehouse.name}
                           </TableCell>
                           <TableCell>
-                            <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            <div className="font-semibold text-slate-800 dark:text-slate-800">
                               {item.product.name}
                             </div>
-                            <div className="text-xs text-slate-400 font-mono">
+                            <div className="text-xs text-slate-500 font-mono">
                               {item.product.sku}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                          <TableCell className="text-right font-mono font-bold text-slate-900 dark:text-slate-900">
                             {item.availableQty}
                           </TableCell>
                           <TableCell className="text-right font-mono text-amber-600">
@@ -418,13 +418,13 @@ export default function WarehousesPage() {
                           </TableCell>
                           <TableCell className="w-36">
                             <div className="space-y-1">
-                              <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                              <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-sky-100 overflow-hidden">
                                 <div
                                   className="h-full bg-blue-500 rounded-full"
                                   style={{ width: `${Math.min(100, Math.max(10, (netSellable / (item.availableQty || 1)) * 100))}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] text-slate-400">
+                              <span className="text-[10px] text-slate-500">
                                 {ratio.toFixed(0)}% reserved
                               </span>
                             </div>
@@ -433,11 +433,11 @@ export default function WarehousesPage() {
                             {netSellable <= 0 ? (
                               <Badge variant="destructive">Depleted</Badge>
                             ) : netSellable < 15 ? (
-                              <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-700">
                                 Low Stock
                               </Badge>
                             ) : (
-                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300">
+                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-700">
                                 Healthy
                               </Badge>
                             )}
@@ -453,7 +453,7 @@ export default function WarehousesPage() {
 
           {/* TAB 2: WAREHOUSE DIRECTORY */}
           <TabsContent value="warehouses" className="space-y-4">
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-slate-200 dark:border-sky-100">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -467,7 +467,7 @@ export default function WarehousesPage() {
                 <TableBody>
                   {warehouses.map((wh) => (
                     <TableRow key={wh.id}>
-                      <TableCell className="font-semibold text-slate-900 dark:text-slate-100">
+                      <TableCell className="font-semibold text-slate-900 dark:text-slate-900">
                         {wh.name}
                       </TableCell>
                       <TableCell>
@@ -475,23 +475,23 @@ export default function WarehousesPage() {
                           {parseFloat(wh.shippingCostWeight).toFixed(2)}x
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 dark:text-slate-300 font-mono">
+                      <TableCell className="text-sm text-slate-600 dark:text-slate-600 font-mono">
                         {wh.replenishmentRule ? (
                           `Reorder < ${wh.replenishmentRule.reorderThreshold ?? "—"} | Target: ${wh.replenishmentRule.targetStock ?? "—"}`
                         ) : (
-                          <span className="text-slate-400">Default policy</span>
+                          <span className="text-slate-500">Default policy</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {wh.isActive ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-700">
                             Active
                           </Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-xs text-slate-400">
+                      <TableCell className="text-right text-xs text-slate-500">
                         {new Date(wh.createdAt).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
@@ -503,7 +503,7 @@ export default function WarehousesPage() {
 
           {/* TAB 3: STOCK ADJUSTMENT & BATCH IMPORT */}
           <TabsContent value="adjust" className="space-y-4">
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-slate-200 dark:border-sky-100">
               <CardHeader>
                 <CardTitle className="text-base font-semibold">
                   Update Stock Levels (Atomic Import)
@@ -521,7 +521,7 @@ export default function WarehousesPage() {
                     <Label htmlFor="adjust-wh" className="text-xs font-medium">Target Warehouse</Label>
                     <select
                       id="adjust-wh"
-                      className="w-full h-10 rounded-md border border-slate-700 bg-[#101f33] px-3 py-2 text-sm text-slate-100"
+                      className="w-full h-10 rounded-md border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-slate-900"
                       value={targetWarehouseId}
                       onChange={(e) => setTargetWarehouseId(e.target.value)}
                       required
@@ -536,7 +536,7 @@ export default function WarehousesPage() {
                     <Label htmlFor="adjust-prod" className="text-xs font-medium">Target Product</Label>
                     <select
                       id="adjust-prod"
-                      className="w-full h-10 rounded-md border border-slate-700 bg-[#101f33] px-3 py-2 text-sm text-slate-100"
+                      className="w-full h-10 rounded-md border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-slate-900"
                       value={targetProductId}
                       onChange={(e) => setTargetProductId(e.target.value)}
                       required
@@ -581,7 +581,7 @@ export default function WarehousesPage() {
                   <Button
                     type="submit"
                     disabled={submittingStock || adjustReserved > adjustAvailable}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-slate-900"
                   >
                     {submittingStock ? "Updating..." : "Commit Stock Adjustment"}
                   </Button>

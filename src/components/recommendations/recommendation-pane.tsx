@@ -91,23 +91,23 @@ export function RecommendationPane({
   }
 
   return (
-    <Card className="border-slate-600/60 bg-[#232a34]" data-testid="recommendation-pane">
-      <CardHeader className="border-b border-slate-800">
+    <Card className="border-sky-200 bg-white" data-testid="recommendation-pane">
+      <CardHeader className="border-b border-sky-100">
         <CardTitle className="text-base">Recommended for this quote</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
         {error && (
           <div
             role="alert"
-            className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700"
           >
             {error}
           </div>
         )}
         {loading ? (
-          <p className="p-2 text-sm text-slate-400">Loading recommendations…</p>
+          <p className="p-2 text-sm text-slate-500">Loading recommendations…</p>
         ) : error ? null : recommendations.length === 0 ? (
-          <p className="p-2 text-sm text-slate-400">No upsell or cross-sell recommendations right now.</p>
+          <p className="p-2 text-sm text-slate-500">No upsell or cross-sell recommendations right now.</p>
         ) : (
           recommendations.map((recommendation) => (
             <RecommendationCard

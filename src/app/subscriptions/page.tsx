@@ -40,15 +40,15 @@ const STATUS_VARIANTS: Record<
 > = {
   ACTIVE: {
     tone: "default",
-    badgeClass: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+    badgeClass: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700",
   },
   PAUSED: {
     tone: "secondary",
-    badgeClass: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+    badgeClass: "border-amber-400/30 bg-amber-400/10 text-amber-700",
   },
   CANCELLED: {
     tone: "destructive",
-    badgeClass: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+    badgeClass: "border-rose-400/30 bg-rose-400/10 text-rose-700",
   },
 };
 
@@ -255,21 +255,21 @@ export default function SubscriptionsPage() {
     }, 0);
 
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
         {/* Top Header Card */}
-        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="rounded-xl border border-sky-200 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <span className="text-xs font-semibold tracking-wider text-sky-400 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-sky-600 uppercase">
                 Module N · Epic 10
               </span>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Subscriptions &amp; Billing
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
                 Hybrid billing architecture (FR-BILL-001). Monitor active recurring contracts,
                 prorate plan changes, inspect originating order lines, and trigger credit note refunds.
               </p>
@@ -280,7 +280,7 @@ export default function SubscriptionsPage() {
                 size="sm"
                 onClick={loadData}
                 disabled={loading}
-                className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className="border-sky-200 bg-white text-slate-800 hover:bg-sky-100"
               >
                 <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -298,47 +298,47 @@ export default function SubscriptionsPage() {
 
           {/* Metric Tiles */}
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Active Subscriptions</span>
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">{activeCount}</div>
-              <div className="mt-1 text-xs text-slate-400">Total contracts live</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{activeCount}</div>
+              <div className="mt-1 text-xs text-slate-500">Total contracts live</div>
             </div>
 
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Monthly Recurring</span>
-                <DollarSign className="h-4 w-4 text-sky-400" />
+                <DollarSign className="h-4 w-4 text-sky-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">
+              <div className="mt-2 text-2xl font-bold text-slate-900">
                 ${mrrTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Normalized MRR basis</div>
+              <div className="mt-1 text-xs text-slate-500">Normalized MRR basis</div>
             </div>
 
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Proration &amp; Rules</span>
-                <Sliders className="h-4 w-4 text-purple-400" />
+                <Sliders className="h-4 w-4 text-purple-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">Day-Based</div>
-              <div className="mt-1 text-xs text-slate-400">TAD §25 Transparent Config</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">Day-Based</div>
+              <div className="mt-1 text-xs text-slate-500">TAD §25 Transparent Config</div>
             </div>
           </div>
         </section>
 
         {error && (
-          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-300">
+          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
         {/* Subscriptions Table Section */}
-        <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
+        <section className="rounded-xl border border-sky-100 bg-white p-6 shadow-xl">
           {/* Status Filter Bar */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-sky-100 pb-4">
             <div className="flex items-center gap-2">
               {["ALL", "ACTIVE", "PAUSED", "CANCELLED"].map((st) => (
                 <button
@@ -347,35 +347,35 @@ export default function SubscriptionsPage() {
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                     statusFilter === st
                       ? "bg-sky-500 text-white"
-                      : "bg-[#1c222b] text-slate-300 hover:bg-slate-700/60"
+                      : "bg-sky-50 text-slate-600 hover:bg-sky-100"
                   }`}
                 >
                   {st}
                 </button>
               ))}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-500">
               Showing {filteredSubs.length} subscription{filteredSubs.length === 1 ? "" : "s"}
             </div>
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-slate-400">Loading subscriptions...</div>
+            <div className="py-12 text-center text-sm text-slate-500">Loading subscriptions...</div>
           ) : filteredSubs.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">
+            <div className="py-12 text-center text-sm text-slate-500">
               No subscriptions match the selected filter.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="text-slate-300">Customer</TableHead>
-                    <TableHead className="text-slate-300">Plan &amp; Cadence</TableHead>
-                    <TableHead className="text-slate-300">Next Bill Date</TableHead>
-                    <TableHead className="text-slate-300">Current Amount</TableHead>
-                    <TableHead className="text-slate-300">Status</TableHead>
-                    <TableHead className="text-right text-slate-300">Actions</TableHead>
+                  <TableRow className="border-sky-100 hover:bg-transparent">
+                    <TableHead className="text-slate-600">Customer</TableHead>
+                    <TableHead className="text-slate-600">Plan &amp; Cadence</TableHead>
+                    <TableHead className="text-slate-600">Next Bill Date</TableHead>
+                    <TableHead className="text-slate-600">Current Amount</TableHead>
+                    <TableHead className="text-slate-600">Status</TableHead>
+                    <TableHead className="text-right text-slate-600">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -387,21 +387,21 @@ export default function SubscriptionsPage() {
                     return (
                       <TableRow
                         key={sub.id}
-                        className="border-slate-800 transition-colors hover:bg-slate-800/50"
+                        className="border-sky-100 transition-colors hover:bg-sky-50"
                       >
-                        <TableCell className="font-medium text-white">
+                        <TableCell className="font-medium text-slate-900">
                           {sub.customer?.name || "Customer " + sub.customerId.slice(0, 8)}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium text-slate-200">
+                          <div className="font-medium text-slate-800">
                             {sub.plan?.name || "Custom SLA"}
                           </div>
-                          <div className="text-xs text-slate-400">{sub.cycle}</div>
+                          <div className="text-xs text-slate-500">{sub.cycle}</div>
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-slate-600">
                           {new Date(sub.nextBillDate).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="font-semibold text-slate-100">{amountStr}</TableCell>
+                        <TableCell className="font-semibold text-slate-900">{amountStr}</TableCell>
                         <TableCell>
                           <Badge
                             variant={statusMeta.tone}
@@ -416,10 +416,10 @@ export default function SubscriptionsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleOpenBillingDetail(sub.id)}
-                              className="border-slate-700 bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700"
+                              className="border-sky-100 bg-sky-50 text-xs text-slate-800 hover:bg-sky-100"
                               title="Screen 10 Billing Detail"
                             >
-                              <FileText className="mr-1 h-3.5 w-3.5 text-sky-400" />
+                              <FileText className="mr-1 h-3.5 w-3.5 text-sky-600" />
                               Detail
                             </Button>
 
@@ -429,10 +429,10 @@ export default function SubscriptionsPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleOpenModify(sub)}
-                                  className="border-slate-700 bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700"
+                                  className="border-sky-100 bg-sky-50 text-xs text-slate-800 hover:bg-sky-100"
                                   title="T10.2 Proration Engine"
                                 >
-                                  <Sliders className="mr-1 h-3.5 w-3.5 text-purple-400" />
+                                  <Sliders className="mr-1 h-3.5 w-3.5 text-purple-600" />
                                   Modify
                                 </Button>
                                 <Button
@@ -443,10 +443,10 @@ export default function SubscriptionsPage() {
                                     setCancelError(null);
                                     setCancelSuccessMsg(null);
                                   }}
-                                  className="border-rose-900/40 bg-rose-950/20 text-xs text-rose-300 hover:bg-rose-900/40"
+                                  className="border-rose-900/40 bg-rose-950/20 text-xs text-rose-700 hover:bg-rose-900/40"
                                   title="T10.3 Cancel &amp; Refund"
                                 >
-                                  <XCircle className="mr-1 h-3.5 w-3.5 text-rose-400" />
+                                  <XCircle className="mr-1 h-3.5 w-3.5 text-rose-600" />
                                   Cancel
                                 </Button>
                               </>
@@ -466,26 +466,26 @@ export default function SubscriptionsPage() {
       {/* MODAL 1: Create New Subscription */}
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <CardTitle className="text-lg font-bold text-white">
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Create New Subscription
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleCreateSubscription} className="space-y-4">
                 {createError && (
-                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                     {createError}
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Customer</Label>
+                  <Label className="text-xs text-slate-600">Customer</Label>
                   <select
                     value={newCustomerId}
                     onChange={(e) => setNewCustomerId(e.target.value)}
-                    className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100"
+                    className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900"
                     required
                   >
                     {(customers ?? []).map((c) => (
@@ -497,7 +497,7 @@ export default function SubscriptionsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Subscription Plan</Label>
+                  <Label className="text-xs text-slate-600">Subscription Plan</Label>
                   <select
                     value={newPlanId}
                     onChange={(e) => {
@@ -506,7 +506,7 @@ export default function SubscriptionsPage() {
                       if (p?.product?.price) setNewAmount(String(p.product.price));
                       if (p?.cadence) setNewCycle(p.cadence);
                     }}
-                    className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100"
+                    className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900"
                     required
                   >
                     {(plans ?? []).map((p) => (
@@ -519,13 +519,13 @@ export default function SubscriptionsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-300">Billing Cadence</Label>
+                    <Label className="text-xs text-slate-600">Billing Cadence</Label>
                     <select
                       value={newCycle}
                       onChange={(e) =>
                         setNewCycle(e.target.value as "MONTHLY" | "QUARTERLY" | "YEARLY")
                       }
-                      className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100"
+                      className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900"
                     >
                       <option value="MONTHLY">MONTHLY</option>
                       <option value="QUARTERLY">QUARTERLY</option>
@@ -533,13 +533,13 @@ export default function SubscriptionsPage() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-300">Amount ($)</Label>
+                    <Label className="text-xs text-slate-600">Amount ($)</Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={newAmount}
                       onChange={(e) => setNewAmount(e.target.value)}
-                      className="border-slate-700 bg-[#232a34] text-slate-100"
+                      className="border-sky-100 bg-white text-slate-900"
                       required
                     />
                   </div>
@@ -550,7 +550,7 @@ export default function SubscriptionsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreating(false)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="border-sky-100 text-slate-600 hover:bg-white"
                   >
                     Cancel
                   </Button>
@@ -571,12 +571,12 @@ export default function SubscriptionsPage() {
       {/* MODAL 2: Screen 10 Billing Detail View */}
       {selectedSubId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-700/60 pb-4">
+          <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-sky-100 pb-4">
               <div>
-                <span className="text-xs font-semibold text-sky-400 uppercase">Screen 10</span>
-                <CardTitle className="text-lg font-bold text-white">Billing Detail</CardTitle>
-                <p className="text-xs text-slate-400">
+                <span className="text-xs font-semibold text-sky-600 uppercase">Screen 10</span>
+                <CardTitle className="text-lg font-bold text-slate-900">Billing Detail</CardTitle>
+                <p className="text-xs text-slate-500">
                   Customer: {billingDetail?.customerName} · Plan: {billingDetail?.planName}
                 </p>
               </div>
@@ -584,53 +584,53 @@ export default function SubscriptionsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedSubId(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-500 hover:text-slate-900"
               >
                 ✕
               </Button>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               {detailLoading ? (
-                <div className="py-8 text-center text-sm text-slate-400">
+                <div className="py-8 text-center text-sm text-slate-500">
                   Loading billing detail...
                 </div>
               ) : billingDetail ? (
                 <>
                   {/* Originating Order One-Time Lines Table */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                    <h3 className="text-xs font-bold tracking-wider text-slate-600 uppercase">
                       From Originating Order (One-Time Lines)
                     </h3>
                     {billingDetail.originatingOrder.oneTimeLines.length === 0 ? (
-                      <p className="rounded border border-slate-800 bg-[#232a34] p-3 text-xs text-slate-400">
+                      <p className="rounded border border-sky-100 bg-white p-3 text-xs text-slate-500">
                         No one-time hardware/software lines associated with this order.
                       </p>
                     ) : (
-                      <div className="rounded-lg border border-slate-700 overflow-hidden">
+                      <div className="rounded-lg border border-sky-100 overflow-hidden">
                         <Table>
                           <TableHeader>
-                            <TableRow className="border-slate-800 bg-slate-800/40">
-                              <TableHead className="text-xs text-slate-300">Product</TableHead>
-                              <TableHead className="text-xs text-slate-300">Qty</TableHead>
-                              <TableHead className="text-xs text-slate-300">Unit Price</TableHead>
-                              <TableHead className="text-right text-xs text-slate-300">
+                            <TableRow className="border-sky-100 bg-sky-50">
+                              <TableHead className="text-xs text-slate-600">Product</TableHead>
+                              <TableHead className="text-xs text-slate-600">Qty</TableHead>
+                              <TableHead className="text-xs text-slate-600">Unit Price</TableHead>
+                              <TableHead className="text-right text-xs text-slate-600">
                                 Amount
                               </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {billingDetail.originatingOrder.oneTimeLines.map((line) => (
-                              <TableRow key={line.id} className="border-slate-800">
-                                <TableCell className="text-xs font-medium text-white">
+                              <TableRow key={line.id} className="border-sky-100">
+                                <TableCell className="text-xs font-medium text-slate-900">
                                   {line.description}
                                 </TableCell>
-                                <TableCell className="text-xs text-slate-300">
+                                <TableCell className="text-xs text-slate-600">
                                   {line.quantity}
                                 </TableCell>
-                                <TableCell className="text-xs text-slate-300">
+                                <TableCell className="text-xs text-slate-600">
                                   ${line.unitPrice}
                                 </TableCell>
-                                <TableCell className="text-right text-xs font-semibold text-emerald-400">
+                                <TableCell className="text-right text-xs font-semibold text-emerald-600">
                                   ${line.amount}
                                 </TableCell>
                               </TableRow>
@@ -643,32 +643,32 @@ export default function SubscriptionsPage() {
 
                   {/* Ongoing Recurring Subscriptions Table */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                    <h3 className="text-xs font-bold tracking-wider text-slate-600 uppercase">
                       Ongoing Recurring Subscriptions
                     </h3>
-                    <div className="rounded-lg border border-slate-700 overflow-hidden">
+                    <div className="rounded-lg border border-sky-100 overflow-hidden">
                       <Table>
                         <TableHeader>
-                          <TableRow className="border-slate-800 bg-slate-800/40">
-                            <TableHead className="text-xs text-slate-300">Plan</TableHead>
-                            <TableHead className="text-xs text-slate-300">Cycle</TableHead>
-                            <TableHead className="text-xs text-slate-300">Next Bill</TableHead>
-                            <TableHead className="text-right text-xs text-slate-300">
+                          <TableRow className="border-sky-100 bg-sky-50">
+                            <TableHead className="text-xs text-slate-600">Plan</TableHead>
+                            <TableHead className="text-xs text-slate-600">Cycle</TableHead>
+                            <TableHead className="text-xs text-slate-600">Next Bill</TableHead>
+                            <TableHead className="text-right text-xs text-slate-600">
                               Amount
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {billingDetail.recurringLines.map((line) => (
-                            <TableRow key={line.id} className="border-slate-800">
-                              <TableCell className="text-xs font-medium text-white">
+                            <TableRow key={line.id} className="border-sky-100">
+                              <TableCell className="text-xs font-medium text-slate-900">
                                 {line.planName}
                               </TableCell>
-                              <TableCell className="text-xs text-slate-300">{line.cycle}</TableCell>
-                              <TableCell className="text-xs text-slate-300">
+                              <TableCell className="text-xs text-slate-600">{line.cycle}</TableCell>
+                              <TableCell className="text-xs text-slate-600">
                                 {new Date(line.nextBillDate).toLocaleDateString()}
                               </TableCell>
-                              <TableCell className="text-right text-xs font-semibold text-sky-400">
+                              <TableCell className="text-right text-xs font-semibold text-sky-600">
                                 ${line.amount}
                               </TableCell>
                             </TableRow>
@@ -680,33 +680,33 @@ export default function SubscriptionsPage() {
 
                   {/* Billing Schedules */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                    <h3 className="text-xs font-bold tracking-wider text-slate-600 uppercase">
                       Billing Schedules (T10.1 Cadence)
                     </h3>
-                    <div className="rounded-lg border border-slate-700 overflow-hidden">
+                    <div className="rounded-lg border border-sky-100 overflow-hidden">
                       <Table>
                         <TableHeader>
-                          <TableRow className="border-slate-800 bg-slate-800/40">
-                            <TableHead className="text-xs text-slate-300">Cycle Period</TableHead>
-                            <TableHead className="text-xs text-slate-300">Status</TableHead>
-                            <TableHead className="text-right text-xs text-slate-300">
+                          <TableRow className="border-sky-100 bg-sky-50">
+                            <TableHead className="text-xs text-slate-600">Cycle Period</TableHead>
+                            <TableHead className="text-xs text-slate-600">Status</TableHead>
+                            <TableHead className="text-right text-xs text-slate-600">
                               Scheduled Amount
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {billingDetail.billingSchedules.map((sched) => (
-                            <TableRow key={sched.id} className="border-slate-800">
-                              <TableCell className="text-xs text-slate-200">
+                            <TableRow key={sched.id} className="border-sky-100">
+                              <TableCell className="text-xs text-slate-800">
                                 {new Date(sched.cycleStart).toLocaleDateString()} →{" "}
                                 {new Date(sched.cycleEnd).toLocaleDateString()}
                               </TableCell>
                               <TableCell>
-                                <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                                <span className="rounded bg-white px-2 py-0.5 text-xs text-slate-600">
                                   {sched.status}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-right text-xs font-semibold text-white">
+                              <TableCell className="text-right text-xs font-semibold text-slate-900">
                                 ${sched.amount}
                               </TableCell>
                             </TableRow>
@@ -725,35 +725,35 @@ export default function SubscriptionsPage() {
       {/* MODAL 3: T10.2 Proration Engine Modification */}
       {modifyingSub && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <span className="text-xs font-semibold text-purple-400 uppercase">
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <span className="text-xs font-semibold text-purple-600 uppercase">
                 T10.2 · Proration Engine
               </span>
-              <CardTitle className="text-lg font-bold text-white">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Modify Subscription Plan
               </CardTitle>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Transparent day-based proration strategy (TAD §25). Calculates unused credit and net
                 adjustment mid-cycle.
               </p>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               {modifyError && (
-                <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                   {modifyError}
                 </div>
               )}
 
               {modifyResult ? (
                 <div className="space-y-4 rounded-lg border border-purple-500/30 bg-purple-500/10 p-4">
-                  <div className="flex items-center text-sm font-semibold text-purple-200">
-                    <CheckCircle2 className="mr-2 h-4 w-4 text-purple-400" />
+                  <div className="flex items-center text-sm font-semibold text-purple-700">
+                    <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
                     Proration Applied Successfully
                   </div>
-                  <div className="space-y-1 text-xs text-slate-300">
+                  <div className="space-y-1 text-xs text-slate-600">
                     <p>{modifyResult.proration.explanation}</p>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-slate-900">
                       Net adjustment:{" "}
                       {modifyResult.proration.netAdjustment >= 0 ? "+" : ""}$
                       {modifyResult.proration.netAdjustment.toFixed(2)}
@@ -769,7 +769,7 @@ export default function SubscriptionsPage() {
               ) : (
                 <form onSubmit={handleApplyModify} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-300">Change Plan</Label>
+                    <Label className="text-xs text-slate-600">Change Plan</Label>
                     <select
                       value={modifyPlanId}
                       onChange={(e) => {
@@ -777,7 +777,7 @@ export default function SubscriptionsPage() {
                         const p = plans?.find((plan) => plan.id === e.target.value);
                         if (p?.product?.price) setModifyAmount(String(p.product.price));
                       }}
-                      className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100"
+                      className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900"
                     >
                       {(plans ?? []).map((p) => (
                         <option key={p.id} value={p.id}>
@@ -788,20 +788,20 @@ export default function SubscriptionsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-300">New Target Amount ($)</Label>
+                    <Label className="text-xs text-slate-600">New Target Amount ($)</Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={modifyAmount}
                       onChange={(e) => setModifyAmount(e.target.value)}
-                      className="border-slate-700 bg-[#232a34] text-slate-100"
+                      className="border-sky-100 bg-white text-slate-900"
                       required
                     />
                   </div>
 
-                  <div className="rounded-md border border-slate-700 bg-[#232a34] p-3 text-xs text-slate-300 space-y-1">
-                    <span className="font-semibold text-white">Strategy: DAY_BASED</span>
-                    <p className="text-slate-400">
+                  <div className="rounded-md border border-sky-100 bg-white p-3 text-xs text-slate-600 space-y-1">
+                    <span className="font-semibold text-slate-900">Strategy: DAY_BASED</span>
+                    <p className="text-slate-500">
                       Unused days on the current cycle will be credited, and remaining days will be
                       charged at the new daily rate.
                     </p>
@@ -812,7 +812,7 @@ export default function SubscriptionsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => setModifyingSub(null)}
-                      className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                      className="border-sky-100 text-slate-600 hover:bg-white"
                     >
                       Cancel
                     </Button>
@@ -834,43 +834,43 @@ export default function SubscriptionsPage() {
       {/* MODAL 4: T10.3 Cancellation & Credit Note Trigger */}
       {cancellingSub && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <span className="text-xs font-semibold text-rose-400 uppercase">
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <span className="text-xs font-semibold text-rose-600 uppercase">
                 T10.3 · Cancellation &amp; Refund
               </span>
-              <CardTitle className="text-lg font-bold text-white">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Cancel Subscription &amp; Trigger Credit Note
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               {cancelError && (
-                <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                   {cancelError}
                 </div>
               )}
 
               {cancelSuccessMsg ? (
-                <div className="rounded border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+                <div className="rounded border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-700">
                   {cancelSuccessMsg}
                 </div>
               ) : (
                 <form onSubmit={handleConfirmCancel} className="space-y-4">
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-slate-600">
                     Under the configured cancellation policy (
-                    <code className="text-rose-300">PRO_RATA_REFUND</code>), cancelling immediately
+                    <code className="text-rose-700">PRO_RATA_REFUND</code>), cancelling immediately
                     will calculate unused duration in the current billing cycle and issue a{" "}
                     <strong>Credit Note</strong> against the invoice.
                   </p>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-300">Cancellation Reason</Label>
+                    <Label className="text-xs text-slate-600">Cancellation Reason</Label>
                     <Input
                       type="text"
                       placeholder="e.g. Contract terminated early or client requested downgrade"
                       value={cancelReason}
                       onChange={(e) => setCancelReason(e.target.value)}
-                      className="border-slate-700 bg-[#232a34] text-slate-100"
+                      className="border-sky-100 bg-white text-slate-900"
                     />
                   </div>
 
@@ -879,7 +879,7 @@ export default function SubscriptionsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => setCancellingSub(null)}
-                      className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                      className="border-sky-100 text-slate-600 hover:bg-white"
                     >
                       Keep Subscription
                     </Button>

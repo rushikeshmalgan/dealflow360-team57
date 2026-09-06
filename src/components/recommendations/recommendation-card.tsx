@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import type { RecommendationViewModel } from "@/lib/recommendations";
 
 const TYPE_TONE: Record<RecommendationViewModel["type"], string> = {
-  UPSELL: "border-sky-400/30 bg-sky-400/10 text-sky-200",
-  CROSS_SELL: "border-violet-400/30 bg-violet-400/10 text-violet-200",
+  UPSELL: "border-sky-400/30 bg-sky-400/10 text-sky-700",
+  CROSS_SELL: "border-violet-400/30 bg-violet-400/10 text-violet-700",
 };
 
 const TYPE_LABEL: Record<RecommendationViewModel["type"], string> = {
@@ -39,29 +39,29 @@ export function RecommendationCard({
   return (
     <div
       data-testid="recommendation-card"
-      className="flex flex-col gap-3 rounded-lg border border-slate-700/70 bg-[#1c222b] px-4 py-3"
+      className="flex flex-col gap-3 rounded-lg border border-sky-100 bg-sky-50 px-4 py-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="border-slate-600 text-slate-400">
+          <Badge variant="outline" className="border-sky-200 text-slate-500">
             #{recommendation.rank}
           </Badge>
           <Badge className={`border ${TYPE_TONE[recommendation.type]}`}>
             {TYPE_LABEL[recommendation.type]}
           </Badge>
-          <span className="text-sm font-semibold text-slate-100">{recommendation.productName}</span>
+          <span className="text-sm font-semibold text-slate-900">{recommendation.productName}</span>
           <span className="text-xs text-slate-500">{recommendation.productSku}</span>
         </div>
-        <span className="text-sm font-semibold text-slate-100">
+        <span className="text-sm font-semibold text-slate-900">
           ${recommendation.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
       </div>
 
-      <p className="text-xs text-slate-400">{recommendation.reason}</p>
+      <p className="text-xs text-slate-500">{recommendation.reason}</p>
 
       <div className="flex flex-wrap items-center gap-2">
         {recommendation.promotion && (
-          <Badge className="border border-amber-400/30 bg-amber-400/10 text-amber-200">
+          <Badge className="border border-amber-400/30 bg-amber-400/10 text-amber-700">
             <Gift className="mr-1 h-3 w-3" />
             {recommendation.promotion.name} · {recommendation.promotion.discountPct}% off
           </Badge>
@@ -69,8 +69,8 @@ export function RecommendationCard({
         <Badge
           className={`border ${
             marginPositive
-              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-              : "border-rose-400/30 bg-rose-400/10 text-rose-200"
+              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-700"
+              : "border-rose-400/30 bg-rose-400/10 text-rose-700"
           }`}
         >
           {marginPositive ? (
@@ -90,7 +90,7 @@ export function RecommendationCard({
         <Button
           variant="ghost"
           size="sm"
-          className="text-slate-400 hover:text-slate-100"
+          className="text-slate-500 hover:text-slate-900"
           disabled={actionsDisabled}
           onClick={() => onDismiss(recommendation)}
         >

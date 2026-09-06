@@ -36,10 +36,10 @@ import type {
 } from "@/modules/portal/application/types";
 
 const STATUS_BADGE: Record<PortalQuotationStatus, string> = {
-  SENT_TO_CUSTOMER: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-200",
-  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-200",
-  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-200",
-  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200",
+  SENT_TO_CUSTOMER: "border-sky-400/30 bg-sky-400/10 text-sky-700 dark:text-sky-700",
+  UNDER_NEGOTIATION: "border-violet-400/30 bg-violet-400/10 text-violet-700 dark:text-violet-700",
+  RE_APPROVAL_REQUIRED: "border-orange-400/30 bg-orange-400/10 text-orange-700 dark:text-orange-700",
+  CONFIRMED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-700",
   COMPLETED: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-100",
 };
 
@@ -381,14 +381,14 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
             </CardHeader>
             <CardContent className="space-y-4">
               {confirmSuccess && (
-                <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+                <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-600">
                   <CheckCircle2 className="size-4" />
                   {confirmSuccess}
                 </p>
               )}
               {confirmError && <p className="text-sm text-destructive">{confirmError}</p>}
               {submitSuccess && (
-                <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+                <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-600">
                   <CheckCircle2 className="size-4" />
                   {submitSuccess}
                 </p>
@@ -403,7 +403,7 @@ export function PortalQuotationDetailClient({ quotationId }: { quotationId: stri
 
               {isNegotiable && hasPending && quotation.pendingNegotiation && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm">
-                  <Clock className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                  <Clock className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-700" />
                   <div>
                     <p className="font-medium">Waiting for a response</p>
                     <p className="mt-1 text-muted-foreground">

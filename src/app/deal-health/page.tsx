@@ -38,10 +38,10 @@ const ALERT_TYPE_LABELS: Record<DealHealthAlertType, string> = {
 };
 
 const SEVERITY_TONE: Record<DealHealthSeverity, string> = {
-  LOW: "border-sky-400/30 bg-sky-400/10 text-sky-200",
-  MEDIUM: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  HIGH: "border-orange-400/30 bg-orange-400/10 text-orange-200",
-  CRITICAL: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+  LOW: "border-sky-400/30 bg-sky-400/10 text-sky-700",
+  MEDIUM: "border-amber-400/30 bg-amber-400/10 text-amber-700",
+  HIGH: "border-orange-400/30 bg-orange-400/10 text-orange-700",
+  CRITICAL: "border-rose-400/30 bg-rose-400/10 text-rose-700",
 };
 
 /** healthy/warning/critical indicator for one deal, derived from its open alerts' worst severity. */
@@ -52,9 +52,9 @@ function dealStatus(alerts: DealHealthAlert[]): "healthy" | "warning" | "critica
 }
 
 const STATUS_INDICATOR: Record<"healthy" | "warning" | "critical", { label: string; tone: string }> = {
-  healthy: { label: "Healthy", tone: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" },
-  warning: { label: "Warning", tone: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
-  critical: { label: "Critical", tone: "border-rose-400/30 bg-rose-400/10 text-rose-200" },
+  healthy: { label: "Healthy", tone: "border-emerald-400/30 bg-emerald-400/10 text-emerald-700" },
+  warning: { label: "Warning", tone: "border-amber-400/30 bg-amber-400/10 text-amber-700" },
+  critical: { label: "Critical", tone: "border-rose-400/30 bg-rose-400/10 text-rose-700" },
 };
 
 function num(value: unknown): number | null {
@@ -190,29 +190,29 @@ export default function DealHealthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
-        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="rounded-xl border border-sky-200 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">Risk intelligence</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-700">Risk intelligence</p>
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Deal health monitor</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                 Deterministic stalled, discount, delivery, and risk signals across active quotations.
               </p>
             </div>
             <div className="flex gap-2">
               <Button
                 variant={statusFilter === "OPEN" ? "default" : "outline"}
-                className={statusFilter === "OPEN" ? "bg-sky-500 text-slate-950 hover:bg-sky-400" : "border-slate-600 bg-transparent text-slate-200 hover:bg-slate-800"}
+                className={statusFilter === "OPEN" ? "bg-sky-500 text-slate-950 hover:bg-sky-400" : "border-sky-200 bg-transparent text-slate-800 hover:bg-white"}
                 onClick={() => setStatusFilter("OPEN")}
               >
                 Open only
               </Button>
               <Button
                 variant={statusFilter === "ALL" ? "default" : "outline"}
-                className={statusFilter === "ALL" ? "bg-sky-500 text-slate-950 hover:bg-sky-400" : "border-slate-600 bg-transparent text-slate-200 hover:bg-slate-800"}
+                className={statusFilter === "ALL" ? "bg-sky-500 text-slate-950 hover:bg-sky-400" : "border-sky-200 bg-transparent text-slate-800 hover:bg-white"}
                 onClick={() => setStatusFilter("ALL")}
               >
                 All history
@@ -223,33 +223,33 @@ export default function DealHealthPage() {
 
         <div className="grid gap-4 md:grid-cols-4">
           {(Object.keys(ALERT_TYPE_LABELS) as DealHealthAlertType[]).map((type) => (
-            <Card key={type} className="border-slate-600/60 bg-[#232a34]">
+            <Card key={type} className="border-sky-200 bg-white">
               <CardContent className="p-5">
                 <p className="text-xs uppercase tracking-wider text-slate-500">{ALERT_TYPE_LABELS[type]}</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-50">{openCountByType[type]}</p>
-                <p className="mt-1 text-xs text-sky-300">open alerts</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{openCountByType[type]}</p>
+                <p className="mt-1 text-xs text-sky-700">open alerts</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {error && (
-          <div className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+          <div className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        <Card className="border-slate-600/60 bg-[#232a34]">
-          <CardHeader className="border-b border-slate-800">
+        <Card className="border-sky-200 bg-white">
+          <CardHeader className="border-b border-sky-100">
             <CardTitle className="text-base">Affected deals</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <p className="p-6 text-sm text-slate-400">Loading deal health…</p>
+              <p className="p-6 text-sm text-slate-500">Loading deal health…</p>
             ) : deals.length === 0 ? (
-              <p className="p-6 text-sm text-slate-400">No {statusFilter === "OPEN" ? "open" : ""} alerts.</p>
+              <p className="p-6 text-sm text-slate-500">No {statusFilter === "OPEN" ? "open" : ""} alerts.</p>
             ) : (
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-sky-100">
                 {deals.map((deal) => (
                   <div key={deal.quotationId} className="space-y-3 px-5 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -258,14 +258,14 @@ export default function DealHealthPage() {
                           {STATUS_INDICATOR[deal.status].label}
                         </Badge>
                         <div>
-                          <p className="font-semibold text-slate-100">{deal.quotationCode}</p>
+                          <p className="font-semibold text-slate-900">{deal.quotationCode}</p>
                           <p className="text-xs text-slate-500">{deal.customerName} · ${Number(deal.dealValue).toLocaleString()}</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-slate-600 bg-transparent text-slate-200 hover:bg-slate-800"
+                        className="border-sky-200 bg-transparent text-slate-800 hover:bg-white"
                         disabled={pendingIds.has(`refresh:${deal.quotationId}`)}
                         onClick={() => handleRefresh(deal.quotationId)}
                       >
@@ -277,24 +277,24 @@ export default function DealHealthPage() {
                       {deal.alerts.map((alert) => (
                         <div
                           key={alert.id}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-700/70 bg-[#1c222b] px-3 py-2"
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-100 bg-sky-50 px-3 py-2"
                         >
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge className={`w-fit border ${SEVERITY_TONE[alert.severity]}`}>{alert.severity}</Badge>
-                            <span className="text-xs font-semibold text-slate-200">{ALERT_TYPE_LABELS[alert.type]}</span>
+                            <span className="text-xs font-semibold text-slate-800">{ALERT_TYPE_LABELS[alert.type]}</span>
                             <span className="text-xs text-slate-500">priority {alert.priorityScore}</span>
                             {alert.status !== "OPEN" && (
-                              <Badge variant="outline" className="border-slate-600 text-slate-400">
+                              <Badge variant="outline" className="border-sky-200 text-slate-500">
                                 {alert.status}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400">{explain(alert)}</p>
+                          <p className="text-xs text-slate-500">{explain(alert)}</p>
                           {alert.status === "OPEN" && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-slate-400 hover:text-slate-100"
+                              className="text-slate-500 hover:text-slate-900"
                               disabled={pendingIds.has(`dismiss:${alert.id}`)}
                               onClick={() => handleDismiss(alert.id)}
                             >

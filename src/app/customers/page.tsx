@@ -128,21 +128,21 @@ export default function CustomersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#171b22] text-slate-100">
+    <div className="min-h-screen bg-sky-50 text-slate-900">
       <DealFlowNav />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-7 sm:px-6">
         {/* Header */}
-        <section className="rounded-xl border border-slate-600/60 bg-[#232a34] p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="rounded-xl border border-sky-200 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <span className="text-xs font-semibold tracking-wider text-sky-400 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-sky-600 uppercase">
                 CRM Module
               </span>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Customers &amp; Tiers
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
                 Manage your customer accounts and tier-based pricing classifications.
               </p>
             </div>
@@ -152,7 +152,7 @@ export default function CustomersPage() {
                 size="sm"
                 onClick={loadData}
                 disabled={loading}
-                className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className="border-sky-200 bg-white text-slate-800 hover:bg-sky-100"
               >
                 <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -178,60 +178,60 @@ export default function CustomersPage() {
 
           {/* Metric Tiles */}
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Total Customers</span>
-                <Users className="h-4 w-4 text-sky-400" />
+                <Users className="h-4 w-4 text-sky-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">
+              <div className="mt-2 text-2xl font-bold text-slate-900">
                 {customers?.length ?? "—"}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Active accounts</div>
+              <div className="mt-1 text-xs text-slate-500">Active accounts</div>
             </div>
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Customer Tiers</span>
-                <Crown className="h-4 w-4 text-purple-400" />
+                <Crown className="h-4 w-4 text-purple-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">
+              <div className="mt-2 text-2xl font-bold text-slate-900">
                 {tiers?.length ?? "—"}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Pricing classifications</div>
+              <div className="mt-1 text-xs text-slate-500">Pricing classifications</div>
             </div>
-            <div className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-4">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>With Email</span>
-                <Mail className="h-4 w-4 text-emerald-400" />
+                <Mail className="h-4 w-4 text-emerald-600" />
               </div>
-              <div className="mt-2 text-2xl font-bold text-white">
+              <div className="mt-2 text-2xl font-bold text-slate-900">
                 {customers?.filter((c) => c.primaryContactEmail).length ?? "—"}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Contactable accounts</div>
+              <div className="mt-1 text-xs text-slate-500">Contactable accounts</div>
             </div>
           </div>
         </section>
 
         {error && (
-          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-300">
+          <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
         {/* Tiers Card */}
-        <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
-          <h2 className="mb-4 text-sm font-bold tracking-wider text-slate-300 uppercase">
+        <section className="rounded-xl border border-sky-100 bg-white p-6 shadow-xl">
+          <h2 className="mb-4 text-sm font-bold tracking-wider text-slate-600 uppercase">
             Customer Tiers
           </h2>
           <div className="flex flex-wrap gap-2">
             {tiers === null ? (
-              <span className="text-sm text-slate-400">Loading tiers…</span>
+              <span className="text-sm text-slate-500">Loading tiers…</span>
             ) : tiers.length === 0 ? (
-              <span className="text-sm text-slate-400">No tiers yet — create one above.</span>
+              <span className="text-sm text-slate-500">No tiers yet — create one above.</span>
             ) : (
               tiers.map((t) => (
                 <Badge
                   key={t.id}
-                  className="border border-purple-400/30 bg-purple-400/10 px-3 py-1 text-xs font-semibold text-purple-200"
+                  className="border border-purple-400/30 bg-purple-400/10 px-3 py-1 text-xs font-semibold text-purple-700"
                 >
                   <Crown className="mr-1.5 h-3 w-3" />
                   {t.name}
@@ -242,9 +242,9 @@ export default function CustomersPage() {
         </section>
 
         {/* Customers Table */}
-        <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
-            <h2 className="text-sm font-bold tracking-wider text-slate-300 uppercase">
+        <section className="rounded-xl border border-sky-100 bg-white p-6 shadow-xl">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-sky-100 pb-4">
+            <h2 className="text-sm font-bold tracking-wider text-slate-600 uppercase">
               All Customers
             </h2>
             <div className="relative w-full max-w-xs">
@@ -252,51 +252,51 @@ export default function CustomersPage() {
                 placeholder="Search customers..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-slate-700 bg-[#1c222b] text-slate-100 placeholder:text-slate-500"
+                className="border-sky-100 bg-sky-50 text-slate-900 placeholder:text-slate-500"
               />
             </div>
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-slate-400">Loading customers...</div>
+            <div className="py-12 text-center text-sm text-slate-500">Loading customers...</div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">
+            <div className="py-12 text-center text-sm text-slate-500">
               No customers found.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="text-slate-300">Name</TableHead>
-                    <TableHead className="text-slate-300">Tier</TableHead>
-                    <TableHead className="text-slate-300">Contact Email</TableHead>
-                    <TableHead className="text-slate-300">Created</TableHead>
+                  <TableRow className="border-sky-100 hover:bg-transparent">
+                    <TableHead className="text-slate-600">Name</TableHead>
+                    <TableHead className="text-slate-600">Tier</TableHead>
+                    <TableHead className="text-slate-600">Contact Email</TableHead>
+                    <TableHead className="text-slate-600">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCustomers.map((cust) => (
                     <TableRow
                       key={cust.id}
-                      className="border-slate-800 transition-colors hover:bg-slate-800/50"
+                      className="border-sky-100 transition-colors hover:bg-sky-50"
                     >
-                      <TableCell className="font-medium text-white">
+                      <TableCell className="font-medium text-slate-900">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-sky-400" />
+                          <Building2 className="h-4 w-4 text-sky-600" />
                           {cust.name}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className="border border-purple-400/30 bg-purple-400/10 text-xs text-purple-200">
+                        <Badge className="border border-purple-400/30 bg-purple-400/10 text-xs text-purple-700">
                           {cust.tier.name}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="text-slate-600">
                         {cust.primaryContactEmail ?? (
                           <span className="text-slate-500">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-slate-400 text-xs">
+                      <TableCell className="text-slate-500 text-xs">
                         {new Date(cust.createdAt).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
@@ -311,37 +311,37 @@ export default function CustomersPage() {
       {/* Create Customer Modal */}
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <Card className="w-full max-w-lg border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <CardTitle className="text-lg font-bold text-white">
+          <Card className="w-full max-w-lg border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Create New Customer
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleCreateCustomer} className="space-y-4">
                 {createError && (
-                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                     {createError}
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Customer Name</Label>
+                  <Label className="text-xs text-slate-600">Customer Name</Label>
                   <Input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. Acme Industrial Corp"
-                    className="border-slate-700 bg-[#232a34] text-slate-100"
+                    className="border-sky-100 bg-white text-slate-900"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Customer Tier</Label>
+                  <Label className="text-xs text-slate-600">Customer Tier</Label>
                   <select
                     value={newTierId}
                     onChange={(e) => setNewTierId(e.target.value)}
-                    className="w-full rounded-md border border-slate-700 bg-[#232a34] px-3 py-2 text-sm text-slate-100"
+                    className="w-full rounded-md border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900"
                     required
                   >
                     {(tiers ?? []).map((t) => (
@@ -353,13 +353,13 @@ export default function CustomersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Primary Contact Email (optional)</Label>
+                  <Label className="text-xs text-slate-600">Primary Contact Email (optional)</Label>
                   <Input
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="contact@example.com"
-                    className="border-slate-700 bg-[#232a34] text-slate-100"
+                    className="border-sky-100 bg-white text-slate-900"
                   />
                 </div>
 
@@ -368,7 +368,7 @@ export default function CustomersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreating(false)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="border-sky-100 text-slate-600 hover:bg-white"
                   >
                     Cancel
                   </Button>
@@ -389,26 +389,26 @@ export default function CustomersPage() {
       {/* Create Tier Modal */}
       {isCreatingTier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <Card className="w-full max-w-md border-slate-700 bg-[#1c222b] text-slate-100 shadow-2xl">
-            <CardHeader className="border-b border-slate-700/60 pb-4">
-              <CardTitle className="text-lg font-bold text-white">
+          <Card className="w-full max-w-md border-sky-100 bg-sky-50 text-slate-900 shadow-2xl">
+            <CardHeader className="border-b border-sky-100 pb-4">
+              <CardTitle className="text-lg font-bold text-slate-900">
                 Create New Tier
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleCreateTier} className="space-y-4">
                 {tierCreateError && (
-                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                  <div className="rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-700">
                     {tierCreateError}
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Tier Name</Label>
+                  <Label className="text-xs text-slate-600">Tier Name</Label>
                   <Input
                     value={newTierName}
                     onChange={(e) => setNewTierName(e.target.value)}
                     placeholder="e.g. Enterprise, SMB, Startup"
-                    className="border-slate-700 bg-[#232a34] text-slate-100"
+                    className="border-sky-100 bg-white text-slate-900"
                     required
                   />
                 </div>
@@ -417,7 +417,7 @@ export default function CustomersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreatingTier(false)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="border-sky-100 text-slate-600 hover:bg-white"
                   >
                     Cancel
                   </Button>

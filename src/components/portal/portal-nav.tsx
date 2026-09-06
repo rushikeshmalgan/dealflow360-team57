@@ -38,10 +38,10 @@ export function PortalNav() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-sky-300/30 bg-[#171d26]/95 text-slate-100 shadow-lg shadow-slate-950/20 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-sky-300/30 bg-white/95 text-slate-900 shadow-lg shadow-slate-200/60 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex items-center gap-6">
-          <Link href="/portal" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-white hover:opacity-95">
+          <Link href="/portal" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-slate-900 hover:opacity-95">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-400 text-sm font-black text-slate-950">
               DF
             </span>
@@ -54,7 +54,7 @@ export function PortalNav() {
                 "rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
                 active
                   ? "bg-sky-400 text-slate-950 shadow-xs font-semibold"
-                  : "text-slate-300 hover:bg-slate-700 hover:text-white",
+                  : "text-slate-600 hover:bg-sky-100 hover:text-slate-900",
               )}
             >
               My Quotes
@@ -65,11 +65,11 @@ export function PortalNav() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="hidden text-xs text-slate-400 sm:inline">{user.email}</span>
+              <span className="hidden text-xs text-slate-500 sm:inline">{user.email}</span>
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+                className="rounded-md border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition-colors hover:bg-sky-100"
               >
                 Sign Out
               </button>
