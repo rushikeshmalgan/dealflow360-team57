@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
+  CheckCircle2,
   Plus,
   RefreshCw,
   Shield,
   ShieldCheck,
   Trash2,
+  Undo2,
+  XCircle,
 } from "lucide-react";
 
 import { DealFlowNav } from "@/components/dealflow-nav";
@@ -22,8 +25,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { ApiClientError, apiRequest } from "@/lib/api-client";
-import type { ApprovalRuleDto } from "@/modules/approval/application/types";
+import type { ApprovalQueueItemDto, ApprovalRuleDto } from "@/modules/approval/application/types";
 
 const RISK_BAND_COLORS: Record<string, string> = {
   LOW: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
@@ -32,9 +36,57 @@ const RISK_BAND_COLORS: Record<string, string> = {
 };
 
 export default function ApprovalsPage() {
+  const { user: me } = useCurrentUser();
+  const canDecide = me?.role === "MANAGER" || me?.role === "FINANCE_OPS" || me?.role === "ADMIN";
+
   const [rules, setRules] = useState<ApprovalRuleDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Pending Approvals queue (T8.2/T8.3)
+  const [queue, setQueue] = useState<ApprovalQueueItemDto[] | null>(null);
+  const [queueLoading, setQueueLoading] = useState(true);
+  const [queueError, setQueueError] = useState<string | null>(null);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [reasonById, setReasonById] = useState<Record<string, string>>({});
+
+  async function loadQueue() {
+    if (!canDecide) return;
+    setQueueLoading(true);
+    setQueueError(null);
+    try {
+      setQueue(await apiRequest<ApprovalQueueItemDto[]>("/api/approvals/queue"));
+    } catch (err) {
+      setQueueError(err instanceof ApiClientError ? err.message : "Failed to load approval queue.");
+    } finally {
+      setQueueLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadQueue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canDecide]);
+
+  async function handleDecision(item: ApprovalQueueItemDto, action: "APPROVE" | "REJECT" | "RETURN") {
+    setDecidingId(item.id);
+    setQueueError(null);
+    try {
+      await apiRequest(`/api/approvals/${item.id}/decision`, {
+        method: "POST",
+        body: JSON.stringify({
+          action,
+          reason: reasonById[item.id]?.trim() || undefined,
+          expectedVersion: item.version,
+        }),
+      });
+      await loadQueue();
+    } catch (err) {
+      setQueueError(err instanceof ApiClientError ? err.message : "Failed to record decision.");
+    } finally {
+      setDecidingId(null);
+    }
+  }
 
   // Create modal
   const [isCreating, setIsCreating] = useState(false);
@@ -197,6 +249,116 @@ export default function ApprovalsPage() {
           <div className="rounded-lg border border-rose-500/50 bg-rose-500/10 p-4 text-sm text-rose-300">
             {error}
           </div>
+        )}
+
+        {/* Pending Approvals Queue (T8.2/T8.3) — visible to Manager/Finance Ops/Admin only */}
+        {canDecide && (
+          <section className="rounded-xl border border-slate-700/60 bg-[#232a34] p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-bold tracking-wider text-slate-300 uppercase">
+                Pending Approvals — {me?.role.replace("_", " ")} Queue
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadQueue}
+                disabled={queueLoading}
+                className="border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+              >
+                <RefreshCw className={`mr-1.5 h-4 w-4 ${queueLoading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+
+            {queueError && (
+              <div className="mb-4 rounded border border-rose-500/50 bg-rose-500/10 p-2 text-xs text-rose-300">
+                {queueError}
+              </div>
+            )}
+
+            {queueLoading ? (
+              <div className="py-8 text-center text-sm text-slate-400">Loading queue...</div>
+            ) : (queue ?? []).length === 0 ? (
+              <div className="py-8 text-center text-sm text-slate-400">
+                Nothing pending your decision right now.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(queue ?? []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-slate-700/60 bg-[#1c222b] p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-sky-400">
+                            {item.quotation.code}
+                          </span>
+                          <Badge className={`border px-2 py-0.5 text-[10px] font-semibold ${RISK_BAND_COLORS[item.riskBand] ?? ""}`}>
+                            {item.riskBand} RISK
+                          </Badge>
+                          <Badge className="border border-slate-500/30 bg-slate-500/10 text-[10px] text-slate-300">
+                            Step {item.stepOrder} · {item.role.replace("_", " ")}
+                          </Badge>
+                          {!item.isActionable && (
+                            <Badge className="border border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">
+                              Waiting on earlier step
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          {item.quotation.customer.name} · Rep: {item.quotation.salesRep.email} · $
+                          {Number(item.quotation.netBeforeTax).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {item.isActionable && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+                        <input
+                          type="text"
+                          placeholder="Optional reason / note"
+                          value={reasonById[item.id] ?? ""}
+                          onChange={(e) => setReasonById((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          className="min-w-[180px] flex-1 rounded-md border border-slate-700 bg-[#232a34] px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500"
+                        />
+                        <Button
+                          size="sm"
+                          disabled={decidingId === item.id}
+                          onClick={() => handleDecision(item, "APPROVE")}
+                          className="bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-500"
+                        >
+                          <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={decidingId === item.id}
+                          onClick={() => handleDecision(item, "RETURN")}
+                          variant="outline"
+                          className="border-amber-700/50 bg-amber-950/20 text-xs font-semibold text-amber-300 hover:bg-amber-900/40"
+                        >
+                          <Undo2 className="mr-1 h-3.5 w-3.5" />
+                          Return
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={decidingId === item.id}
+                          onClick={() => handleDecision(item, "REJECT")}
+                          variant="outline"
+                          className="border-rose-900/40 bg-rose-950/20 text-xs font-semibold text-rose-300 hover:bg-rose-900/40"
+                        >
+                          <XCircle className="mr-1 h-3.5 w-3.5" />
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {/* Rules Table */}
