@@ -13,9 +13,8 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
-import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
-
 import { DealFlowNav } from "@/components/dealflow-nav";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -70,7 +69,8 @@ type QuotationSummaryRow = {
 const CLOSED_STATUSES = new Set(["REJECTED", "COMPLETED"]);
 
 export default function HomePage() {
-  const { isSignedIn } = useAuth();
+  const { user, isLoading } = useCurrentUser();
+  const isSignedIn = !!user;
   const [productCount, setProductCount] = useState<number | null>(null);
   const [quotations, setQuotations] = useState<QuotationSummaryRow[] | null>(null);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
@@ -236,7 +236,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#171b22] pb-16">
       <DealFlowNav />
 
-      <SignedOut>
+      {!isLoading && !isSignedIn && (
         <main className="mx-auto max-w-2xl px-4 py-20 sm:px-6">
           <Card className="border-border bg-card p-8 text-center shadow-md">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-5">
@@ -250,7 +250,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Link
-                href="/sign-in"
+                href="/login"
                 className={buttonVariants({ size: "lg", className: "px-6 font-semibold shadow-sm" })}
               >
                 Sign In to DealFlow360
@@ -258,9 +258,9 @@ export default function HomePage() {
             </div>
           </Card>
         </main>
-      </SignedOut>
+      )}
 
-      <SignedIn>
+      {isSignedIn && (
         <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 sm:px-6">
           {/* Welcome & Command Bar */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -497,7 +497,7 @@ export default function HomePage() {
             </Card>
           </div>
         </main>
-      </SignedIn>
+      )}
     </div>
   );
 }

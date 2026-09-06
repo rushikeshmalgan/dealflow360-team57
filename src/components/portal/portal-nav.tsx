@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { apiRequest } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +16,26 @@ import { cn } from "@/lib/utils";
  */
 export function PortalNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useCurrentUser();
   const active = pathname === "/portal" || pathname?.startsWith("/portal/quotations");
+
+  // Symmetric to DealFlowNav's redirect: an internal-role session has no reason to sit on the
+  // customer portal (and a CUSTOMER actor is the only role the portal APIs accept anyway).
+  useEffect(() => {
+    if (user && user.role !== "CUSTOMER") {
+      router.replace("/");
+    }
+  }, [user, router]);
+
+  async function handleSignOut() {
+    try {
+      await apiRequest("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.push("/login");
+      router.refresh();
+    }
+  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-sky-300/30 bg-[#171d26]/95 text-slate-100 shadow-lg shadow-slate-950/20 backdrop-blur">
@@ -43,26 +63,25 @@ export function PortalNav() {
         </div>
 
         <div className="flex items-center gap-3">
-          <SignedIn>
-            <div className="flex items-center gap-2">
-              <span className="hidden text-xs text-slate-400 sm:inline">Signed in</span>
-              <UserButton
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: "h-8 w-8 border border-sky-300/50",
-                  },
-                }}
-              />
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="hidden text-xs text-slate-400 sm:inline">{user.email}</span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+              >
+                Sign Out
+              </button>
             </div>
-          </SignedIn>
-          <SignedOut>
+          ) : (
             <Link
-              href="/sign-in"
+              href="/login"
               className="rounded-md bg-sky-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-sky-300"
             >
               Sign In
             </Link>
-          </SignedOut>
+          )}
         </div>
       </div>
     </header>

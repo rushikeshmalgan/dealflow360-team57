@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { DealFlowNav } from "@/components/dealflow-nav";
+import { NegotiationPanel } from "@/components/negotiation-panel";
 import { RecommendationPane } from "@/components/recommendations/recommendation-pane";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -547,6 +548,17 @@ export default function QuotationsPage() {
                       Margin: {selectedQuote.summary.marginPct ? `${Number(selectedQuote.summary.marginPct).toFixed(1)}%` : "—"}
                     </span>
                   </div>
+
+                  {/* Negotiation panel (T12.2/T12.4's internal counterpart) */}
+                  {selectedQuote.status === "UNDER_NEGOTIATION" && (
+                    <NegotiationPanel
+                      quotationId={selectedQuote.id}
+                      onResolved={async () => {
+                        await handleOpenDetail(selectedQuote.id);
+                        await loadData();
+                      }}
+                    />
+                  )}
 
                   {/* Lines */}
                   <div className="space-y-2">
