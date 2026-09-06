@@ -1,55 +1,52 @@
-import { NextResponse } from "next/server";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { SESSION_COOKIE_NAME } from "@/lib/auth/session-cookie";
 
 /**
- * Authentication routes where already-logged-in users should be redirected to the dashboard.
+ * Authentication routes where an already-logged-in visitor should be redirected to their
+ * landing page instead of seeing the login form again (e.g. browser back button).
  */
-const isAuthRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/login(.*)",
-]);
+const AUTH_ROUTES = ["/login"];
 
 /**
- * Public routes that do NOT require authentication.
+ * Public routes that do NOT require a session cookie at the edge.
  *
- * - /sign-in, /sign-up: Clerk authentication pages (for unauthenticated visitors)
- * - /login: Fallback login route
- * - /api/health: Infrastructure health check (TAD §50)
- * - /api/webhooks/(.*): Webhook endpoints (Clerk user sync, etc.)
+ * - /login: email/password entry point (internal roles land on "/", CUSTOMER lands on "/portal")
+ * - /api/(.*): every Route Handler enforces identity & role-based access control itself via
+ *   getRequestActor() and returns a JSON 401/403 instead of a browser redirect. In development
+ *   this also allows the x-dev-user-id bypass for Postman/tests.
  */
-const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/login(.*)",
-  "/api/(.*)",
-]);
+const PUBLIC_PREFIXES = ["/login", "/api/"];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+}
 
 /**
- * Clerk middleware for Next.js 15.
- *
- * Establishes Clerk auth context on every request. Protected routes
- * require an active Clerk session.
+ * Lightweight edge check: presence of the `df_session` cookie gates page routes (the cookie's
+ * validity — expiry, revocation — is re-checked server-side by getCurrentUser()/getRequestActor()
+ * on every actual render/request, since middleware can't hit the database).
  */
-export default clerkMiddleware(async (auth, request) => {
-  const { userId } = await auth();
+export default function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const hasSession = request.cookies.has(SESSION_COOKIE_NAME);
 
-  // If already signed in, prevent visiting login/sign-in (e.g. browser back button)
-  if (userId && isAuthRoute(request)) {
+  if (hasSession && AUTH_ROUTES.includes(pathname)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // API routes enforce identity & role-based access control directly via getRequestActor()
-  // and return appropriate JSON error payloads (401/403) instead of browser redirects.
-  // In development, this also enables x-dev-user-id testing for Postman/curl.
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    return;
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
   }
 
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  if (!hasSession && !isPublicPath(pathname)) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

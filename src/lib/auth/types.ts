@@ -1,24 +1,20 @@
 import type { AppRole } from "./roles";
 
 /**
- * Represents the authenticated user's identity as resolved from Clerk.
- *
- * All fields come from trusted server-side sources (Clerk auth() + publicMetadata).
- * The client NEVER provides these values.
+ * Represents the authenticated user's identity as resolved from the `df_session` cookie
+ * (see src/lib/auth/session.ts). All fields come from the trusted `sessions` -> `users` join —
+ * the client never provides these values.
  */
 export interface AuthenticatedUser {
-  /** Clerk's unique user ID (maps to users.clerk_user_id in PostgreSQL). */
-  clerkUserId: string;
+  /** Internal `users.id` (uuid). */
+  id: string;
 
-  /** The user's role from Clerk publicMetadata.role. */
+  /** The user's role from the `users` table. */
   role: AppRole;
 
-  /** The user's email address from Clerk. */
+  /** The user's email address. */
   email: string;
 
-  /** The user's first name from Clerk (may be null). */
-  firstName: string | null;
-
-  /** The user's last name from Clerk (may be null). */
-  lastName: string | null;
+  /** The linked `customers.id`, present only for CUSTOMER-role users. */
+  customerId: string | null;
 }

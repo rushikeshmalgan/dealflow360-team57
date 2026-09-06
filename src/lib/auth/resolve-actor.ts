@@ -1,26 +1,38 @@
 import type { NextRequest } from "next/server";
 
+import { prisma } from "@/lib/db";
 import type { Actor } from "@/modules/shared/domain/actor";
 
-import { resolveActorByInternalUserId, resolveActorForClerkUser } from "./clerk-mapping";
-import { getCurrentUser } from "./server";
+import { getSessionUser, SESSION_COOKIE_NAME } from "./session";
 
-export { resolveActorByInternalUserId, resolveActorForClerkUser } from "./clerk-mapping";
+/**
+ * Looks up an already-seeded `users` row by its internal id, active-only. Shared by the REST
+ * `x-dev-user-id` bypass below and the Socket.IO handshake's equivalent dev bypass
+ * (src/realtime/authentication.ts) - both let local tooling impersonate a seeded row without a
+ * real browser session, and both only ever trust role/customerId from this Postgres row.
+ */
+export async function resolveActorByInternalUserId(userId: string): Promise<Actor | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, customerId: true, isActive: true },
+  });
+  if (!user?.isActive) return null;
+  return { id: user.id, role: user.role, customerId: user.customerId };
+}
 
 /**
  * Maps a request to this app's internal Actor `{id, role, customerId}` — the shape every
- * service's requireInternal/requireAdmin/requireRole check consumes (see request-actor.ts,
- * "T1 installs its Clerk-backed resolver here"). Two paths:
+ * service's requireInternal/requireAdmin/requireRole check consumes (see request-actor.ts).
+ * Two paths:
  *
- * 1. Real Clerk session: resolve the Clerk identity, then upsert/look up the mirrored `users`
- *    row by clerk_user_id (T1.2 — no webhook exists yet, so this auto-provisions the row on
- *    first sight instead) for the internal id/customerId — role and customerId always come
- *    from Postgres, never trusted from the Clerk token alone (TAD SS6/SS7).
+ * 1. Real session: read the `df_session` cookie, resolve it against the `sessions` table
+ *    (src/lib/auth/session.ts) — role/customerId always come from the joined `users` row, never
+ *    trusted from the cookie itself beyond the opaque token it carries.
  * 2. Local API-testing bypass (`x-dev-user-id` header, non-production only): impersonate an
  *    already-seeded `users` row directly by its internal id, so tools like Postman can exercise
- *    the API without a browser session/webhook sync. The header only ever selects *which* row
- *    to trust — role/customerId still come from that row in Postgres, so a caller cannot grant
- *    themselves a role the seeded user doesn't actually have.
+ *    the API without a browser session. The header only ever selects *which* row to trust —
+ *    role/customerId still come from that row in Postgres, so a caller cannot grant themselves a
+ *    role the seeded user doesn't actually have.
  */
 export async function resolveRequestActor(request: NextRequest): Promise<Actor | null> {
   if (process.env.NODE_ENV !== "production") {
@@ -28,8 +40,9 @@ export async function resolveRequestActor(request: NextRequest): Promise<Actor |
     if (devUserId) return resolveActorByInternalUserId(devUserId);
   }
 
-  const clerkUser = await getCurrentUser();
-  if (!clerkUser) return null;
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const user = await getSessionUser(token);
+  if (!user) return null;
 
-  return resolveActorForClerkUser(clerkUser);
+  return { id: user.id, role: user.role, customerId: user.customerId };
 }

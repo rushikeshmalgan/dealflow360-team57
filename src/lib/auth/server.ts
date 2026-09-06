@@ -1,45 +1,26 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 
-import { buildAuthenticatedUser } from "./clerk-mapping";
+import { getSessionUser, SESSION_COOKIE_NAME } from "./session";
 import type { AppRole } from "./roles";
-import { isValidRole } from "./roles";
 import type { AuthenticatedUser } from "./types";
 
 /**
- * Resolves the currently authenticated user from Clerk's server-side auth context.
+ * Resolves the currently authenticated user from the `df_session` cookie (Next's request-scoped
+ * `cookies()` — server components / Route Handlers only, not the Socket.IO handshake, which uses
+ * `resolveSocketActor` in src/realtime/authentication.ts instead).
  *
- * The role is extracted from `publicMetadata.role` — the single trusted source.
- * Returns null if the user is not authenticated or has no valid role.
- *
- * SECURITY: This function NEVER reads role data from request body, query params,
- * cookies, or any client-controlled source. The Clerk session token (managed by
- * Clerk infrastructure) is the sole identity source.
+ * SECURITY: This function NEVER reads identity from request body, query params, or any other
+ * client-controlled source — only the httpOnly session cookie, whose token is looked up against
+ * the `sessions` table server-side.
  */
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
-  const { userId } = await auth();
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!userId) {
-    return null;
-  }
+  const user = await getSessionUser(token);
+  if (!user) return null;
 
-  const user = await currentUser();
-
-  if (!user) {
-    return null;
-  }
-
-  const rawRole = user.publicMetadata?.role;
-  let role: AppRole;
-
-  if (isValidRole(rawRole)) {
-    role = rawRole;
-  } else if (process.env.NODE_ENV === "development") {
-    role = "ADMIN";
-  } else {
-    return null;
-  }
-
-  return buildAuthenticatedUser(userId, role, user);
+  return { id: user.id, role: user.role, email: user.email, customerId: user.customerId };
 }
 
 /**
@@ -48,7 +29,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
  * Use in server components, route handlers, and server actions where
  * authentication is required.
  *
- * @throws Error if the user is not authenticated or has an invalid role.
+ * @throws Error if the user is not authenticated.
  */
 export async function requireAuth(): Promise<AuthenticatedUser> {
   const user = await getCurrentUser();
