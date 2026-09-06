@@ -178,15 +178,15 @@ enum RecommendationStatus {
 // ---------------------------------------------------------------------------
 
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  clerkUserId String   @unique @map("clerk_user_id")
-  email       String
-  role        Role
-  customerId  String?  @map("customer_id") @db.Uuid
-  isActive    Boolean  @default(true) @map("is_active")
-  syncStatus  String   @default("SYNCED") @map("sync_status")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  /// scrypt(password, salt) — see src/lib/auth/password.ts. Never the plaintext password.
+  passwordHash String   @map("password_hash")
+  role         Role
+  customerId   String?  @map("customer_id") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   customer                 Customer?         @relation(fields: [customerId], references: [id])
   quotationsAsRep          Quotation[]       @relation("QuotationSalesRep")
@@ -196,9 +196,27 @@ model User {
   auditLogs                AuditLog[]        @relation("AuditActor")
   dealHealthAlertsResolved DealHealthAlert[] @relation("DealHealthAlertResolvedBy")
   recommendationsDismissed Recommendation[]  @relation("RecommendationDismissedBy")
+  sessions                 Session[]
 
   @@index([customerId])
   @@map("users")
+}
+
+/// Email/password session (replaces the earlier Clerk-backed identity). One row per active
+/// login; the `df_session` cookie carries `token` directly (see src/lib/auth/session.ts) — the
+/// token itself is the lookup key, matching this schema's existing idempotency-key convention
+/// rather than adding a signing secret. Deleted on logout or expiry cleanup, never updated.
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 model CustomerTier {

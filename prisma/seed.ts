@@ -1,32 +1,42 @@
 /**
- * Seed skeleton for local/dev database bootstrap.
- * Full demo fixtures (five role accounts, Gold customer, A/B/C warehouses, etc.)
- * are populated in T13.2 per DealFlow360_docs/Feature-ticket-list_PhaseI.md.
+ * Seed script for local/dev database bootstrap.
+ * Creates the demo catalog/warehouse fixtures plus the 5 role-based demo accounts.
  */
 import { PrismaPg } from "@prisma/adapter-pg";
+import { randomBytes, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+const scryptAsync = promisify(scrypt);
+
+/** Mirrors src/lib/auth/password.ts's hashPassword (kept standalone so seeding never imports
+ * Next.js app code). */
+async function hashPassword(plain: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = (await scryptAsync(plain, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
 /**
- * Fixed ids so local API testing (e.g. the Postman collection in docs/) can hardcode
- * `x-dev-user-id` without re-reading them from the database after every reseed.
- * These are the ONLY ids the dev-only bypass in src/lib/auth/resolve-actor.ts can ever
- * impersonate with — it looks up the row and trusts its role/customerId, nothing from
- * the request. Real Clerk users are unaffected; this is purely a local testing seam.
+ * Five fixed demo accounts, one per role — `<role>@user.gmail.com` / password `<role>`.
+ * Any other email/password typed into /login self-provisions as a brand-new CUSTOMER instead
+ * (see src/lib/auth/login.ts); these five are the only accounts seeded up front.
  */
-const DEV_USERS = [
-  { id: "210b50ce-53f1-4762-906e-292cca031b02", clerkUserId: "dev-admin", email: "dev-admin@dealflow360.local", role: "ADMIN" as const },
-  { id: "54c4f54f-c413-44c7-98b1-60c0adb9ebef", clerkUserId: "dev-sales-rep", email: "dev-sales-rep@dealflow360.local", role: "SALES_REP" as const },
-  { id: "62b0a6e1-07b5-4806-9c3f-42426c32b57a", clerkUserId: "dev-manager", email: "dev-manager@dealflow360.local", role: "MANAGER" as const },
-  { id: "b27383ea-84f4-4f95-b2df-7160a08bda1f", clerkUserId: "dev-finance-ops", email: "dev-finance-ops@dealflow360.local", role: "FINANCE_OPS" as const },
+const DEMO_ACCOUNTS = [
+  { email: "admin@user.gmail.com", password: "admin", role: "ADMIN" as const },
+  { email: "sales@user.gmail.com", password: "sales", role: "SALES_REP" as const },
+  { email: "manager@user.gmail.com", password: "manager", role: "MANAGER" as const },
+  { email: "finance@user.gmail.com", password: "finance", role: "FINANCE_OPS" as const },
+  { email: "customer@user.gmail.com", password: "customer", role: "CUSTOMER" as const },
 ];
 
 async function main() {
   // 1. Customer Tiers
-  await Promise.all(
+  const [, , goldTier] = await Promise.all(
     ["Bronze", "Silver", "Gold"].map((name) =>
       prisma.customerTier.upsert({
         where: { name },
@@ -155,13 +165,43 @@ async function main() {
     }),
   ]);
 
-  // 6. Dev-only test users (local API testing bypass, see src/lib/auth/resolve-actor.ts)
-  for (const user of DEV_USERS) {
+  // 6. Gold-tier demo customer, linked to the seeded CUSTOMER account below. Fixed id so
+  // reseeding stays idempotent; must be a version-4-shaped UUID (RFC 4122) since this app's own
+  // zod schemas (z.string().uuid()) reject a nil/all-zero id, unlike Postgres's uuid column.
+  const demoCustomer = await prisma.customer.upsert({
+    where: { id: "11111111-1111-4111-8111-111111111111" },
+    update: {},
+    create: {
+      id: "11111111-1111-4111-8111-111111111111",
+      name: "Acme Industrial Corp",
+      tierId: goldTier.id,
+      primaryContactEmail: "customer@user.gmail.com",
+    },
+  });
+
+  // 7. Five demo role accounts (admin/sales/manager/finance/customer@user.gmail.com).
+  for (const account of DEMO_ACCOUNTS) {
+    const passwordHash = await hashPassword(account.password);
     await prisma.user.upsert({
-      where: { id: user.id },
-      update: { clerkUserId: user.clerkUserId, email: user.email, role: user.role, isActive: true },
-      create: user,
+      where: { email: account.email },
+      update: {
+        passwordHash,
+        role: account.role,
+        isActive: true,
+        customerId: account.role === "CUSTOMER" ? demoCustomer.id : null,
+      },
+      create: {
+        email: account.email,
+        passwordHash,
+        role: account.role,
+        customerId: account.role === "CUSTOMER" ? demoCustomer.id : null,
+      },
     });
+  }
+
+  console.log("Seeded demo accounts:");
+  for (const account of DEMO_ACCOUNTS) {
+    console.log(`  ${account.email} / ${account.password}  (${account.role})`);
   }
 }
 
