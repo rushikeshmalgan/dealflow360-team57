@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth, useClerk } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { LogOut, AlertCircle, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { apiRequest } from "@/lib/api-client";
 
 /**
  * Intercepts browser back-button navigation when the user is logged in,
  * asking them to confirm whether they want to log out or stay on the current page.
  */
 export function BackLogoutModal() {
-  const { isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const { user: currentUser } = useCurrentUser();
+  const isSignedIn = !!currentUser;
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -48,15 +51,10 @@ export function BackLogoutModal() {
   async function handleConfirmLogout() {
     setIsLoggingOut(true);
     try {
-      try {
-        window.localStorage.removeItem("dealflow360_token");
-        window.localStorage.removeItem("dealflow360_user");
-      } catch {
-        // ignore
-      }
-      await signOut({ redirectUrl: "/sign-in" });
-    } catch {
-      window.location.href = "/sign-in";
+      await apiRequest("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.push("/login");
+      router.refresh();
     }
   }
 
