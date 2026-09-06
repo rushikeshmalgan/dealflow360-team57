@@ -23,7 +23,9 @@ import type {
 import type { Actor } from "@/modules/shared/domain/actor";
 
 import type { NegotiateQuotationInput } from "../schemas/negotiation";
-import type { NegotiationRepository } from "../application/ports";
+import type { ResolveNegotiationInput } from "../schemas/resolve";
+import type { InternalNegotiationRepository, NegotiationRepository } from "../application/ports";
+import type { PendingNegotiationDto, ResolveNegotiationResultDto } from "../application/types";
 
 type CustomerActor = Actor & { customerId: string };
 
@@ -266,7 +268,7 @@ function translateWriteError(error: unknown): never {
   throw error;
 }
 
-export class PrismaNegotiationRepository implements NegotiationRepository {
+export class PrismaNegotiationRepository implements NegotiationRepository, InternalNegotiationRepository {
   constructor(private readonly db: PrismaClient = prisma) {}
 
   async listPortalQuotations(actor: CustomerActor): Promise<PortalQuotationListItemDto[]> {
@@ -624,4 +626,162 @@ export class PrismaNegotiationRepository implements NegotiationRepository {
       translateWriteError(error);
     }
   }
+
+  private async ownershipCheck(actor: Actor, quotationId: string): Promise<{ salesRepId: string }> {
+    const quotation = await this.db.quotation.findUnique({
+      where: { id: quotationId },
+      select: { salesRepId: true },
+    });
+    if (!quotation) throw new ServiceError("NOT_FOUND", "Quotation not found", { id: quotationId });
+    if (actor.role === "SALES_REP" && actor.id !== quotation.salesRepId) {
+      throw new ServiceError("FORBIDDEN", "You can only manage negotiations on your own quotations");
+    }
+    return quotation;
+  }
+
+  async getPendingNegotiation(actor: Actor, quotationId: string): Promise<PendingNegotiationDto | null> {
+    await this.ownershipCheck(actor, quotationId);
+
+    const pending = await this.db.negotiation.findFirst({
+      where: { quotationId, status: "PENDING" },
+      include: { changeRequests: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!pending) return null;
+
+    const comments = await this.db.customerComment.findMany({
+      where: { quotationId, createdAt: { gte: pending.createdAt } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return toPendingNegotiationDto(pending, comments);
+  }
+
+  async resolve(
+    actor: Actor,
+    quotationId: string,
+    negotiationId: string,
+    input: ResolveNegotiationInput,
+  ): Promise<ResolveNegotiationResultDto> {
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const quotation = await tx.quotation.findUnique({
+          where: { id: quotationId },
+          select: { status: true, version: true, salesRepId: true },
+        });
+        if (!quotation) throw new ServiceError("NOT_FOUND", "Quotation not found", { id: quotationId });
+        if (actor.role === "SALES_REP" && actor.id !== quotation.salesRepId) {
+          throw new ServiceError("FORBIDDEN", "You can only manage negotiations on your own quotations");
+        }
+        // Re-checks status inside the same transaction as the write below (the ownershipCheck()
+        // helper used by getPendingNegotiation only covers the read path).
+        if (quotation.status !== "UNDER_NEGOTIATION") {
+          throw new ServiceError(
+            "INVALID_STATE_TRANSITION",
+            "This quotation has no active negotiation to resolve",
+            { id: quotationId, status: quotation.status },
+          );
+        }
+
+        const negotiation = await tx.negotiation.findFirst({
+          where: { id: negotiationId, quotationId },
+          include: { changeRequests: true },
+        });
+        if (!negotiation) throw new ServiceError("NOT_FOUND", "Negotiation not found", { id: negotiationId });
+        if (negotiation.status !== "PENDING") {
+          throw new ServiceError("ALREADY_ACTIONED", "This negotiation has already been resolved", {
+            id: negotiationId,
+          });
+        }
+
+        const applying = input.action === "APPLY";
+        const newNegotiationStatus = applying ? "ACCEPTED" : "REJECTED";
+
+        await tx.negotiation.update({ where: { id: negotiationId }, data: { status: newNegotiationStatus } });
+        if (negotiation.changeRequests.length) {
+          await tx.changeRequest.updateMany({
+            where: { negotiationId },
+            data: { status: applying ? "APPLIED" : "REJECTED" },
+          });
+        }
+
+        // Applying re-opens the quote for the customer to review/confirm rather than jumping
+        // straight to CONFIRMED — T12.4's confirm() (already implemented) is what re-scores risk
+        // and routes to re-approval or fulfillment; this only ever hands control back to the
+        // customer with the counter-discount (the negotiation's one directly-actionable term)
+        // applied. Quantity/line-removal change requests are recorded as APPLIED/REJECTED here
+        // for the audit trail, but executing them still goes through the rep's normal builder
+        // controls (PATCH /api/quotations/{id}) — deliberately not auto-mutated here.
+        await withOptimisticVersion(tx.quotation, quotationId, quotation.version, {
+          status: "SENT_TO_CUSTOMER",
+          ...(applying && negotiation.counterDiscountPct !== null
+            ? { orderDiscountPct: negotiation.counterDiscountPct }
+            : {}),
+        });
+
+        await recordAudit(tx, {
+          actor,
+          entityType: "Quotation",
+          entityId: quotationId,
+          action: applying ? "NEGOTIATION_APPLIED" : "NEGOTIATION_DECLINED",
+          before: { status: "UNDER_NEGOTIATION" },
+          after: { status: "SENT_TO_CUSTOMER", negotiationId },
+          reason: input.reason,
+        });
+
+        const [updatedNegotiation, updatedQuotation, comments] = await Promise.all([
+          tx.negotiation.findUniqueOrThrow({ where: { id: negotiationId }, include: { changeRequests: true } }),
+          tx.quotation.findUniqueOrThrow({ where: { id: quotationId }, select: { status: true, version: true } }),
+          tx.customerComment.findMany({
+            where: { quotationId, createdAt: { gte: negotiation.createdAt } },
+            orderBy: { createdAt: "asc" },
+          }),
+        ]);
+
+        return {
+          negotiation: toPendingNegotiationDto(updatedNegotiation, comments),
+          quotationId,
+          quotationStatus: updatedQuotation.status,
+          quotationVersion: updatedQuotation.version,
+        };
+      });
+    } catch (error) {
+      translateWriteError(error);
+    }
+  }
+}
+
+type PendingNegotiationRecord = Prisma.NegotiationGetPayload<{ include: { changeRequests: true } }>;
+type PlainComment = { id: string; quotationLineId: string | null; comment: string; createdAt: Date };
+
+function toPendingNegotiationDto(
+  negotiation: PendingNegotiationRecord,
+  comments: PlainComment[],
+): PendingNegotiationDto {
+  const generalComment = [...comments].reverse().find((c) => !c.quotationLineId);
+  const lineComments = comments.filter((c) => c.quotationLineId);
+
+  return {
+    id: negotiation.id,
+    status: negotiation.status,
+    counterDiscountPct: negotiation.counterDiscountPct ? negotiation.counterDiscountPct.times(100).toString() : null,
+    requestedDeliveryDate: negotiation.requestedDeliveryDate
+      ? negotiation.requestedDeliveryDate.toISOString().slice(0, 10)
+      : null,
+    generalComment: generalComment?.comment ?? null,
+    lineComments: lineComments.map((c) => ({
+      id: c.id,
+      lineId: c.quotationLineId,
+      comment: c.comment,
+      createdAt: c.createdAt.toISOString(),
+    })),
+    changeRequests: negotiation.changeRequests.map((cr) => ({
+      id: cr.id,
+      lineId: cr.quotationLineId,
+      requestType: cr.requestType,
+      note: (cr.requestedValue as { note?: string } | null)?.note ?? null,
+      status: cr.status,
+    })),
+    createdAt: negotiation.createdAt.toISOString(),
+  };
 }
