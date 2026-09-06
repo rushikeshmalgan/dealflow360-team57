@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 
 import { getRealtimeSocket, type RealtimeSocket } from "@/lib/realtime-client";
@@ -13,12 +12,11 @@ import type { RoomJoinAck } from "@/realtime/types";
  * something changed, so the caller can refetch the authoritative REST resource.
  */
 
-/** The shared, Clerk-authenticated Socket.IO connection for the whole app. */
+/** The shared, session-cookie-authenticated Socket.IO connection for the whole app. */
 export function useRealtimeSocket(): RealtimeSocket {
-  const { getToken } = useAuth();
   const socketRef = useRef<RealtimeSocket | null>(null);
   if (!socketRef.current) {
-    socketRef.current = getRealtimeSocket(() => getToken());
+    socketRef.current = getRealtimeSocket();
   }
   return socketRef.current;
 }

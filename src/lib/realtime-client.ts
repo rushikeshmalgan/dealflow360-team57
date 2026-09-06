@@ -3,27 +3,22 @@ import { io, type Socket } from "socket.io-client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/realtime/types";
 
 export type RealtimeSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
-export type GetToken = () => Promise<string | null | undefined>;
 
 let socket: RealtimeSocket | undefined;
 
 /**
  * One shared Socket.IO connection for the whole app (TAD SS23: rooms/delivery are per-connection
- * and transient - there's no reason for more than one). `getToken` is re-invoked before every
- * (re)connection attempt via socket.io-client's function form of `auth`
- * (https://socket.io/docs/v4/client-options/#auth), so a freshly-refreshed Clerk session token
- * is always sent - including after a reconnect, never a stale one captured at first connect.
+ * and transient - there's no reason for more than one). The `df_session` cookie is httpOnly, so
+ * client JS never reads or forwards it explicitly — the browser attaches it automatically to this
+ * same-origin handshake, and the server (src/realtime/authentication.ts) reads it off the raw
+ * Cookie header.
  */
-export function getRealtimeSocket(getToken: GetToken): RealtimeSocket {
+export function getRealtimeSocket(): RealtimeSocket {
   if (socket) return socket;
 
   socket = io({
     path: "/socket.io/",
-    auth: (callback) => {
-      getToken()
-        .then((token) => callback({ token }))
-        .catch(() => callback({ token: null }));
-    },
+    withCredentials: true,
   });
 
   return socket;

@@ -1,27 +1,21 @@
 import type { IncomingHttpHeaders } from "node:http";
 
-import { createClerkClient, verifyToken } from "@clerk/backend";
-
-import {
-  buildAuthenticatedUser,
-  resolveActorByInternalUserId,
-  resolveActorForClerkUser,
-} from "@/lib/auth/clerk-mapping";
-import { isValidRole, type AppRole } from "@/lib/auth/roles";
-import type { AuthenticatedUser } from "@/lib/auth/types";
+import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
+import { getSessionUser } from "@/lib/auth/session";
+import { resolveActorByInternalUserId } from "@/lib/auth/resolve-actor";
 import type { Actor } from "@/modules/shared/domain/actor";
 
 /**
  * The Socket.IO handshake never runs through Next.js's request/middleware lifecycle (it's a raw
- * HTTP upgrade on the custom server - see server.ts), so Clerk's request-scoped `auth()` /
- * `currentUser()` helpers (src/lib/auth/server.ts) don't work here. The client instead sends its
- * Clerk session token via the handshake `auth` payload (Socket.IO's documented credential
- * channel: https://socket.io/docs/v4/middlewares/#sending-credentials), which this module
- * verifies manually with @clerk/backend before resolving the same internal Actor REST uses.
+ * HTTP upgrade on the custom server - see server.ts), so the cookie-based `getCurrentUser()`
+ * helper (src/lib/auth/server.ts) doesn't work here. The `df_session` cookie is httpOnly, so
+ * client JS can never read it to hand it over explicitly — instead we rely on the browser
+ * automatically attaching the `Cookie` header to the same-origin handshake request (socket.io's
+ * default XHR/WebSocket cookie behavior), and parse the token out of the raw header here.
  *
- * Do NOT trust any client-supplied user id / role / customerId here - only `sub` (the Clerk
- * user id) from a cryptographically verified token, and role/customerId always come back from
- * Postgres via resolveActorForClerkUser.
+ * Do NOT trust any client-supplied user id / role / customerId here - only the opaque session
+ * token parsed from the handshake's own Cookie header, and role/customerId always come back from
+ * the `sessions` -> `users` join in Postgres.
  */
 export type SocketAuthenticationInput = {
   auth: unknown;
@@ -30,62 +24,43 @@ export type SocketAuthenticationInput = {
 
 export type SocketActorResolver = (input: SocketAuthenticationInput) => Promise<Actor | null>;
 
-// The Socket.IO handshake never runs through Next's request pipeline, so this can't use the
-// `@clerk/nextjs/server` convenience client (it needs Next's request-scoped middleware config).
-// @clerk/backend's own client, built directly from CLERK_SECRET_KEY, works the same way
-// everywhere. It's also the only import path that avoids a real bug in @clerk/nextjs's
-// published ESM build: `@clerk/nextjs/server`'s barrel re-exports an internal module via a
-// relative import missing a file extension, which plain Node ESM (unlike a bundler) refuses to
-// resolve - importing straight from @clerk/backend sidesteps that barrel entirely.
-const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-
-async function resolveViaClerkToken(token: string): Promise<Actor | null> {
-  try {
-    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
-    const clerkUserId = payload.sub;
-    if (!clerkUserId) return null;
-
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const rawRole = clerkUser.publicMetadata?.role;
-    let role: AppRole;
-
-    if (isValidRole(rawRole)) {
-      role = rawRole;
-    } else if (process.env.NODE_ENV === "development") {
-      role = "ADMIN";
-    } else {
-      return null;
+function extractSessionToken(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(";")) {
+    const [rawName, ...rawValue] = part.trim().split("=");
+    if (rawName === SESSION_COOKIE_NAME) {
+      return decodeURIComponent(rawValue.join("="));
     }
-
-    const authenticatedUser: AuthenticatedUser = buildAuthenticatedUser(clerkUserId, role, clerkUser);
-    return resolveActorForClerkUser(authenticatedUser);
-  } catch (error) {
-    console.warn("[realtime] token verification failed", error instanceof Error ? error.message : error);
-    return null;
   }
+  return null;
+}
+
+async function resolveViaSessionToken(token: string): Promise<Actor | null> {
+  const user = await getSessionUser(token);
+  if (!user) return null;
+  return { id: user.id, role: user.role, customerId: user.customerId };
 }
 
 /**
- * Default resolver: verifies a real Clerk session token, with the same non-production
- * `devUserId` bypass REST offers via `x-dev-user-id` (src/lib/auth/resolve-actor.ts) so local
- * tooling/tests can connect without a browser Clerk session. Never active in production.
+ * Default resolver: verifies the real session cookie forwarded on the handshake, with the same
+ * non-production `devUserId` bypass REST offers via `x-dev-user-id` (src/lib/auth/resolve-actor.ts)
+ * so local tooling/tests can connect without a browser session. Never active in production.
  */
-export const resolveSocketActorDefault: SocketActorResolver = async ({ auth }) => {
+export const resolveSocketActorDefault: SocketActorResolver = async ({ auth, headers }) => {
   const authPayload = typeof auth === "object" && auth !== null ? (auth as Record<string, unknown>) : {};
 
   if (process.env.NODE_ENV !== "production" && typeof authPayload.devUserId === "string") {
     return resolveActorByInternalUserId(authPayload.devUserId);
   }
 
-  if (typeof authPayload.token === "string" && authPayload.token.length > 0) {
-    return resolveViaClerkToken(authPayload.token);
-  }
+  const token = extractSessionToken(headers.cookie);
+  if (token) return resolveViaSessionToken(token);
 
   return null;
 };
 
 // Overridable like registerRequestActorResolver (src/lib/request-actor.ts) so tests can swap in
-// a fake identity resolver instead of a real Clerk token/network round trip.
+// a fake identity resolver instead of a real session/network round trip.
 let resolver: SocketActorResolver = resolveSocketActorDefault;
 
 export function registerSocketActorResolver(next: SocketActorResolver): void {

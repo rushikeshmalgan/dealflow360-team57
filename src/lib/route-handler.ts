@@ -19,12 +19,22 @@ export function parseQuery<T>(request: Request, schema: ZodType<T>): T {
   return schema.parse(Object.fromEntries(new URL(request.url).searchParams));
 }
 
-export async function api<T>(work: () => Promise<T>, successStatus = 200) {
+/**
+ * `onSuccess` lets a route attach side effects (e.g. Set-Cookie for login/logout) to the
+ * response envelope without every other route handler needing to know about it.
+ */
+export async function api<T>(
+  work: () => Promise<T>,
+  successStatus = 200,
+  onSuccess?: (response: NextResponse, data: T) => void,
+) {
   const requestId = randomUUID();
   try {
     const data = await work();
     if (successStatus === 204) return new NextResponse(null, { status: 204 });
-    return NextResponse.json({ data, requestId }, { status: successStatus });
+    const response = NextResponse.json({ data, requestId }, { status: successStatus });
+    onSuccess?.(response, data);
+    return response;
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
