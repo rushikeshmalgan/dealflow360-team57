@@ -29,10 +29,10 @@ describe("Subscription REST API routes (Epic 10)", () => {
 
     // 1. User
     const user = await prisma.user.upsert({
-      where: { clerkUserId: "clerk-test-api-sub-user" },
+      where: { email: "api-sub-user@example.com" },
       update: {},
       create: {
-        clerkUserId: "clerk-test-api-sub-user",
+        passwordHash: "test-fixture",
         email: "api-sub-user@example.com",
         role: "ADMIN",
       },

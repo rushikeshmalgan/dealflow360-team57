@@ -27,10 +27,10 @@ describe("PrismaSubscriptionRepository (Epic 10 Integration Tests)", () => {
   beforeAll(async () => {
     // 1. User
     const user = await prisma.user.upsert({
-      where: { clerkUserId: "clerk-test-billing-user" },
+      where: { email: "billing-rep@example.com" },
       update: {},
       create: {
-        clerkUserId: "clerk-test-billing-user",
+        passwordHash: "test-fixture",
         email: "billing-rep@example.com",
         role: "ADMIN",
       },

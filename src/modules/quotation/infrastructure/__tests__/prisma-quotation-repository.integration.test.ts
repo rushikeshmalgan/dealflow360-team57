@@ -26,7 +26,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaQuotationRepository (integrati
   beforeAll(async () => {
     const suffix = randomUUID();
     const user = await prisma.user.create({
-      data: { clerkUserId: `test_${suffix}`, email: `rep+${suffix}@test.local`, role: "SALES_REP" },
+      data: { passwordHash: "test-fixture", email: `rep+${suffix}@test.local`, role: "SALES_REP" },
     });
     actor = { id: user.id, role: "SALES_REP" };
 

@@ -23,7 +23,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaDiscountRuleRepository (integr
 
   beforeAll(async () => {
     const user = await prisma.user.create({
-      data: { clerkUserId: `test_${randomUUID()}`, email: `admin+${randomUUID()}@test.local`, role: "ADMIN" },
+      data: { passwordHash: "test-fixture", email: `admin+${randomUUID()}@test.local`, role: "ADMIN" },
     });
     actor = { id: user.id, role: "ADMIN" };
 

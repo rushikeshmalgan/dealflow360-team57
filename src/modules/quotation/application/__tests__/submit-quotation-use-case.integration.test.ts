@@ -42,7 +42,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const suffix = randomUUID();
       const user = await prisma.user.create({
         data: {
-          clerkUserId: `test_${suffix}`,
+          passwordHash: "test-fixture",
           email: `rep+${suffix}@test.local`,
           role: "SALES_REP",
         },

@@ -69,11 +69,11 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaDealHealthRepository + DealHea
   beforeAll(async () => {
     const suffix = randomUUID();
     const rep = await prisma.user.create({
-      data: { clerkUserId: `test_rep_${suffix}`, email: `rep+${suffix}@test.local`, role: "SALES_REP" },
+      data: { passwordHash: "test-fixture", email: `rep+${suffix}@test.local`, role: "SALES_REP" },
     });
     salesRepId = rep.id;
     const manager = await prisma.user.create({
-      data: { clerkUserId: `test_mgr_${suffix}`, email: `mgr+${suffix}@test.local`, role: "MANAGER" },
+      data: { passwordHash: "test-fixture", email: `mgr+${suffix}@test.local`, role: "MANAGER" },
     });
     managerId = manager.id;
 
@@ -261,7 +261,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaDealHealthRepository + DealHea
       // this test's own fixture data does.
       const suffix = randomUUID();
       const discountRep = await prisma.user.create({
-        data: { clerkUserId: `test_dh_${suffix}`, email: `dhrep+${suffix}@test.local`, role: "SALES_REP" },
+        data: { passwordHash: "test-fixture", email: `dhrep+${suffix}@test.local`, role: "SALES_REP" },
       });
       extraUserIds.push(discountRep.id);
 

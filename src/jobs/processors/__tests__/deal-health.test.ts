@@ -34,7 +34,7 @@ describe.skipIf(!process.env.DATABASE_URL)("dealHealthEvaluateProcessor (integra
   beforeAll(async () => {
     const suffix = randomUUID();
     const rep = await prisma.user.create({
-      data: { clerkUserId: `test_jobrep_${suffix}`, email: `jobrep+${suffix}@test.local`, role: "SALES_REP" },
+      data: { passwordHash: "test-fixture", email: `jobrep+${suffix}@test.local`, role: "SALES_REP" },
     });
     salesRepId = rep.id;
     const tier = await prisma.customerTier.create({ data: { name: `Job-Tier-${suffix}` } });

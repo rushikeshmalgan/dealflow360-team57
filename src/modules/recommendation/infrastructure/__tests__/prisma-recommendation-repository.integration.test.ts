@@ -44,7 +44,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaRecommendationRepository + Rec
   beforeAll(async () => {
     const suffix = randomUUID();
     const repUser = await prisma.user.create({
-      data: { clerkUserId: `test_rec_rep_${suffix}`, email: `rec-rep+${suffix}@test.local`, role: "SALES_REP" },
+      data: { passwordHash: "test-fixture", email: `rec-rep+${suffix}@test.local`, role: "SALES_REP" },
     });
     salesRepId = repUser.id;
     rep = { id: salesRepId, role: "SALES_REP" };

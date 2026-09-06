@@ -29,7 +29,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PrismaFulfillmentRepository (integra
   beforeAll(async () => {
     const suffix = randomUUID();
     const user = await prisma.user.create({
-      data: { clerkUserId: `f_test_${suffix}`, email: `f_rep+${suffix}@test.local`, role: "SALES_REP" },
+      data: { passwordHash: "test-fixture", email: `f_rep+${suffix}@test.local`, role: "SALES_REP" },
     });
     actor = { id: user.id, role: "SALES_REP" };
 
